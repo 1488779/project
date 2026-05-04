@@ -21,12 +21,12 @@ function Header() {
           <Link to="/how-it-works">Как помочь</Link>
         </nav>
         <div className="flex gap-4">
-        <button className="border px-6 py-3 rounded-lg">
+        <Link className="border px-6 py-3 rounded-lg" to="/login">
             Войти
-          </button>
-        <button className="bg-[#2E7D32] text-white px-6 py-3 rounded-lg">
+          </Link>
+          <Link className="bg-[#2E7D32] text-white px-6 py-3 rounded-lg" to="/role-selection">
             Регистрация
-          </button>
+          </Link>
         </div>
       </div>
     </header>

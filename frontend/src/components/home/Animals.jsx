@@ -24,7 +24,7 @@ function Animals() {
         {animals.map((a, i) => (
           <div key={i} className="bg-white rounded-xl p-4 ">
             <div className = " border-b border-gray-200 pb-4 mb-4">
-              <div className="h-[220px] bg-gray-200 mb-3 rounded-md">
+              <div className="h-55 bg-gray-200 mb-3 rounded-md">
                 <img src={plug} alt="plug" className="w-full h-full object-cover rounded-md" />
               </div>
               <p className="font-semibold">{a.name}</p>

@@ -9,7 +9,7 @@ function Hero() {
       <div className="max-w-lg">
         <div className = "flex items-center gap-2 mb-4">
           <span className="bg-[#F0F0F0] text-[#2E7D32] mb-2 flex gap-4 items-center rounded-lg">
-            <img src={paws} className="w-[14hug] h-[20hug] flex-shrink-0"/> 
+            <img src={paws} className="w-[14hug] h-[20hug] shrink-0"/> 
             Платформа добрых дел
           </span>
         </div>
@@ -44,7 +44,6 @@ function Hero() {
             <p>Тысячи спасенных жизней</p>
           </div>
         </div>
-
       </div>
 
 
