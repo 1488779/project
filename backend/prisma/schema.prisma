@@ -27,3 +27,50 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+model Volunteer {
+  id               Int      @id @default(autoincrement())
+  fullName         String
+  phone            String
+  email            String?
+  city             String
+  photo            String?
+  skills           String[]
+  hasExperience    Boolean  @default(false)
+  preferredAnimals String[]
+  considersFoster  Boolean  @default(false)
+  hasCage          Boolean? @default(false)
+  hasSeparateRoom  Boolean? @default(false)
+  maxFosterDays    Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Shelter {
+  id          Int      @id @default(autoincrement())
+  orgName     String
+  legalStatus String
+  phone       String
+  email       String
+  address     String
+  website     String?
+  logo        String?
+  requisites  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Overexposure {
+  id               Int      @id @default(autoincrement())
+  fullName         String
+  phone            String
+  email            String?
+  city             String
+  photo            String?
+  hasCage          Boolean? @default(false)
+  hasSeparateRoom  Boolean? @default(false)
+  hasOtherAnimals  Boolean? @default(false)
+  maxDays          Int?
+  acceptedAnimals  String[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
