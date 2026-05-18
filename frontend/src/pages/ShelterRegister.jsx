@@ -12,12 +12,78 @@ export default function ShelterRegister() {
     requisites: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log(form);
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Ошибка загрузки файла");
+    }
+    return data.url;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.orgName || !form.phone || !form.email || !form.address) {
+      setError("Пожалуйста, заполните все обязательные поля");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let logoUrl = null;
+
+      if (form.logo) {
+        logoUrl = await uploadFile(form.logo);
+      }
+
+      const dataToSend = {
+        orgName: form.orgName,
+        legalStatus: form.legalStatus,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        website: form.website || null,
+        logo: logoUrl,
+        requisites: form.requisites || null,
+      };
+
+      const response = await fetch("http://localhost:5000/api/register/shelter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Приют успешно зарегистрирован!");
+        window.location.href = "/";
+      } else {
+        setError(data.error || "Ошибка при регистрации");
+      }
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setError("Не удалось соединиться с сервером");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,6 +93,12 @@ export default function ShelterRegister() {
         <h1 className="text-xl font-bold mb-6 text-gray-900">
           Регистрация приюта
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Название организации */}
         <div className="mb-4">
@@ -124,6 +196,7 @@ export default function ShelterRegister() {
               <img
                 src={URL.createObjectURL(form.logo)}
                 className="h-16 object-contain rounded"
+                alt="preview"
               />
             ) : (
               <>🖼️<br />Нажмите для загрузки</>
@@ -155,9 +228,14 @@ export default function ShelterRegister() {
         {/* Кнопка */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-xl text-base transition"
+          disabled={loading}
+          className={`w-full font-medium py-3 rounded-xl text-base transition ${
+            loading 
+              ? "bg-gray-400 cursor-not-allowed" 
+              : "bg-green-600 hover:bg-green-700 text-white"
+          }`}
         >
-          Далее
+          {loading ? "Отправка..." : "Далее"}
         </button>
       </div>
     </div>
