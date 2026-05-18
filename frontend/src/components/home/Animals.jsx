@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import plug from "../../assets/plug.png";
 
 const animals = [
@@ -15,15 +16,15 @@ function Animals() {
         <p className="text-gray-600 mb-4">
           Эти животные готовы стать членами вашей семьи
         </p>
-        <a href="#" className="text-[#2E7D32] font-semibold flex justify-between items-center ml-auto mb-6">
+        <Link className="text-[#2E7D32] font-semibold flex justify-between items-center ml-auto mb-6" to="/animals-page"> 
           Смотреть всех →
-        </a>
+        </Link>
       </div>
 
       <div className="grid grid-cols-4 gap-6">
         {animals.map((a, i) => (
           <div key={i} className="bg-white rounded-xl p-4 ">
-            <div className = " border-b border-gray-200 pb-4 mb-4">
+            <div className = "border-b border-gray-200 pb-4 mb-4">
               <div className="h-55 bg-gray-200 mb-3 rounded-md">
                 <img src={plug} alt="plug" className="w-full h-full object-cover rounded-md" />
               </div>

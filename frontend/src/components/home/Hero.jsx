@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import dog from "../../assets/dog.png";
 import paws from "../../assets/paws.png";
 import mark from "../../assets/mark.png";
@@ -25,13 +26,13 @@ function Hero() {
         </p>
 
         <div className="flex gap-4 mb-4">
-          <button className="bg-[#2E7D32] text-white px-6 py-3 rounded-full">
+          <Link className="bg-[#2E7D32] text-white px-6 py-3 rounded-full" to="/role-selection">
             Начать помогать
-          </button>
+          </Link>
 
-          <button className="border px-6 py-3 rounded-full">
+          <Link className="border px-6 py-3 rounded-full" to="/shelters-page">
             Найти приют
-          </button>
+          </Link>
         </div>
 
         <div className="flex items-center mb-6">

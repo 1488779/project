@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function CTA() {
   return (
     <section className="bg-[#2E7D32] text-white py-16 text-center">
@@ -8,9 +10,9 @@ function CTA() {
         <p>Присоединяйтесь к нам сегодня и станьте частью большого</p>
         <p>доброго дела. Любая помощь имеет значение.</p>
       </div>
-      <button className="bg-white text-[#2E7D32] px-6 py-3 rounded-full">
+      <Link className="bg-white text-[#2E7D32] px-6 py-3 rounded-full" to="/role-selection">
         Стать волонтером
-      </button>
+      </Link>
       
     </section>
     

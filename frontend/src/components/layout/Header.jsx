@@ -15,13 +15,13 @@ function Header() {
 
         <nav className="flex gap-6">
           <Link className = "text-[16px] text-[#666666]" to="/">📍 Екатеринбург ▼</Link>
-          <Link to="/">О проекте</Link>
-          <Link to="/shelters">Приюты</Link>
-          <Link to="/animals">Животные</Link>
-          <Link to="/how-it-works">Как помочь</Link>
+          <Link to="/about-project">О проекте</Link>
+          <Link to="/shelters-page">Приюты</Link>
+          <Link to="/animals-page">Животные</Link>
+          <Link to="/how-to-help">Как помочь</Link>
         </nav>
         <div className="flex gap-4">
-        <Link className="border px-6 py-3 rounded-lg" to="/login">
+        <Link className="border px-6 py-3 rounded-lg" to="/login-page">
             Войти
           </Link>
           <Link className="bg-[#2E7D32] text-white px-6 py-3 rounded-lg" to="/role-selection">
