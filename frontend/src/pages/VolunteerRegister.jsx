@@ -19,6 +19,9 @@ export default function VolunteerRegister() {
     maxFosterDays: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const toggleArray = (field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -32,18 +35,90 @@ export default function VolunteerRegister() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log(form);
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Ошибка загрузки файла");
+    }
+    return data.url;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.fullName || !form.phone || !form.city) {
+      setError("Пожалуйста, заполните ФИО, телефон и город");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let photoUrl = null;
+
+      if (form.photo) {
+        photoUrl = await uploadFile(form.photo);
+      }
+
+      const dataToSend = {
+        fullName: form.fullName,
+        phone: form.phone,
+        email: form.email || null,
+        city: form.city,
+        photo: photoUrl,
+        skills: form.skills,
+        hasExperience: form.hasExperience,
+        preferredAnimals: form.preferredAnimals,
+        considersFoster: form.considersFoster,
+        hasCage: form.hasCage,
+        hasSeparateRoom: form.hasSeparateRoom,
+        maxFosterDays: form.maxFosterDays || null,
+      };
+
+      const response = await fetch("http://localhost:5000/api/register/volunteer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Волонтёр успешно зарегистрирован!");
+        window.location.href = "/";
+      } else {
+        setError(data.error || "Ошибка при регистрации");
+      }
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setError("Не удалось соединиться с сервером");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 px-4">
       <div className="bg-white rounded-2xl shadow-md w-full max-w-xl p-8">
 
-
         <h1 className="text-xl font-bold mb-6 text-gray-900">
           Регистрация волонтера
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         {/* ФИО */}
         <div className="mb-4">
@@ -98,7 +173,7 @@ export default function VolunteerRegister() {
               onChange={(e) => handleChange("city", e.target.value)}
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500"
             />
-            <button className="flex items-center gap-1 text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50">
+            <button type="button" className="flex items-center gap-1 text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50">
               📍 Определить
             </button>
           </div>
@@ -115,6 +190,7 @@ export default function VolunteerRegister() {
               <img
                 src={URL.createObjectURL(form.photo)}
                 className="w-full h-full rounded-full object-cover"
+                alt="preview"
               />
             ) : (
               <>📷<br />Загрузить</>
@@ -136,6 +212,7 @@ export default function VolunteerRegister() {
             {SKILLS.map((skill) => (
               <button
                 key={skill}
+                type="button"
                 onClick={() => toggleArray("skills", skill)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${form.skills.includes(skill)
@@ -169,6 +246,7 @@ export default function VolunteerRegister() {
             {ANIMALS.map((animal) => (
               <button
                 key={animal}
+                type="button"
                 onClick={() => toggleArray("preferredAnimals", animal)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${form.preferredAnimals.includes(animal)
@@ -224,9 +302,14 @@ export default function VolunteerRegister() {
         {/* Кнопка */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-xl text-base transition"
+          disabled={loading}
+          className={`w-full font-medium py-3 rounded-xl text-base transition ${
+            loading 
+              ? "bg-gray-400 cursor-not-allowed" 
+              : "bg-green-600 hover:bg-green-700 text-white"
+          }`}
         >
-          Далее
+          {loading ? "Отправка..." : "Далее"}
         </button>
       </div>
     </div>

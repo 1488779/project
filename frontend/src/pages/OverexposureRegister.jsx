@@ -16,6 +16,9 @@ export default function OverexposureRegister() {
     acceptedAnimals: [],
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -29,8 +32,73 @@ export default function OverexposureRegister() {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log(form);
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Ошибка загрузки файла");
+    }
+    return data.url;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.fullName || !form.phone || !form.city) {
+      setError("Пожалуйста, заполните ФИО, телефон и город");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let photoUrl = null;
+
+      if (form.photo) {
+        photoUrl = await uploadFile(form.photo);
+      }
+
+      const dataToSend = {
+        fullName: form.fullName,
+        phone: form.phone,
+        email: form.email || null,
+        city: form.city,
+        photo: photoUrl,
+        hasCage: form.hasCage,
+        hasSeparateRoom: form.hasSeparateRoom,
+        hasOtherAnimals: form.hasOtherAnimals,
+        maxDays: form.maxDays || null,
+        acceptedAnimals: form.acceptedAnimals,
+      };
+
+      const response = await fetch("http://localhost:5000/api/register/overexposure", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Передержка успешно зарегистрирована!");
+        window.location.href = "/";
+      } else {
+        setError(data.error || "Ошибка при регистрации");
+      }
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setError("Не удалось соединиться с сервером");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,6 +108,12 @@ export default function OverexposureRegister() {
         <h1 className="text-xl font-bold mb-6 text-gray-900">
           Регистрация передержки
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         {/* ФИО */}
         <div className="mb-4">
@@ -94,7 +168,7 @@ export default function OverexposureRegister() {
               onChange={(e) => handleChange("city", e.target.value)}
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500"
             />
-            <button className="flex items-center gap-1 text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50">
+            <button type="button" className="flex items-center gap-1 text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50">
               📍 Определить
             </button>
           </div>
@@ -111,6 +185,7 @@ export default function OverexposureRegister() {
               <img
                 src={URL.createObjectURL(form.photo)}
                 className="w-full h-full rounded-full object-cover"
+                alt="preview"
               />
             ) : (
               <>📷<br />Загрузить</>
@@ -169,6 +244,7 @@ export default function OverexposureRegister() {
             {ANIMALS.map((animal) => (
               <button
                 key={animal}
+                type="button"
                 onClick={() => toggleArray("acceptedAnimals", animal)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${form.acceptedAnimals.includes(animal)
@@ -185,9 +261,12 @@ export default function OverexposureRegister() {
         {/* Кнопка */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-xl text-base transition"
+          disabled={loading}
+          className={`w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-xl text-base transition ${
+            loading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
-          Далее
+          {loading ? "Отправка..." : "Далее"}
         </button>
 
         <p className="text-center text-xs text-gray-400 mt-4">
