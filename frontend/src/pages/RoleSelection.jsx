@@ -3,8 +3,8 @@ import RoleCard from "../components/RoleCard";
 import { useNavigate } from "react-router-dom";
 
 import volunteerImg from "../assets/roles/volunteer.png";
-import shelterImg from "../assets/roles/shelter.png";
-import overexposureImg from "../assets/roles/overexposure.png";
+import curatorImg from "../assets/roles/curator.png";
+import ownerImg from "../assets/roles/owner.png";
 
 export default function RoleSelection() {
     const [selectedRole, setSelectedRole] = useState(null);
@@ -32,23 +32,23 @@ export default function RoleSelection() {
               <RoleCard
                 image={volunteerImg}
                 title="Волонтер"
-                description="Помогаю животным в свободное время: выгуливаю, доставляю корм, участвую в мероприятиях"
+                description="Физическое лицо, которое хочет помогать животным: выгул, перевозка, передержка и т.д."
                 isSelected={selectedRole === "volunteer"}
                 onClick={() => setSelectedRole("volunteer")}
               />
               <RoleCard
-                image={shelterImg}
-                title="Приют"
-                description="Предоставляю приют для животных и ищу волонтёров для помощи"
-                isSelected={selectedRole === "shelter"}
-                onClick={() => setSelectedRole("shelter")}
+                image={curatorImg}
+                title="Куратор"
+                description="Сотрудник приюта. Создаёте и управляете профилем приюта, публикуете задачи, ведёте картотеку."
+                isSelected={selectedRole === "curator"}
+                onClick={() => setSelectedRole("curator")}
               />
               <RoleCard
-                image={overexposureImg}
-                title="Передержка"
-                description="Готов временно взять животное на передержку до поиска постоянного дома"
-                isSelected={selectedRole === "overexposure"}
-                onClick={() => setSelectedRole("overexposure")}
+                image={ownerImg}
+                title="Владелец"
+                description="Физическое лицо, которому нужна передержка для своего питомца."
+                isSelected={selectedRole === "owner"}
+                onClick={() => setSelectedRole("owner")}
               />
             </div>
 
