@@ -7,11 +7,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ========== ПОДКЛЮЧЕНИЕ МАРШРУТОВ ==========
+const volunteerRoutes = require('./routes/volunteerRoutes');
+const ownerRoutes = require('./routes/ownerRoutes');
+const curatorRoutes = require('./routes/curatorRoutes');
+const shelterRoutes = require('./routes/shelterRoutes');
+const uploadRoutes = require('./routes/upload');
 const animalsRoutes = require('./routes/animals');
 const tasksRoutes = require('./routes/tasks');
-const registerRoutes = require('./routes/register');
-const uploadRoutes = require('./routes/upload');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -34,10 +36,13 @@ app.get('/', (req, res) => {
   res.json({ message: 'Сервер работает!' });
 });
 
+app.use('/api/volunteer', volunteerRoutes);
+app.use('/api/owner', ownerRoutes);
+app.use('/api/curator', curatorRoutes);
+app.use('/api/shelters', shelterRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/animals', animalsRoutes);
 app.use('/api/tasks', tasksRoutes);
-app.use('/api/register', registerRoutes);
-app.use('/api/upload', uploadRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Маршрут не найден' });

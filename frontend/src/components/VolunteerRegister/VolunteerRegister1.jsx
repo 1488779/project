@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const SKILLS = ["Транспорт", "Выгул", "Уборка", "Стройка", "Фото", "SMM", "Ветеринария", "Сбор средств", "Юридическая помощь"];
 const ANIMALS = ["Собаки", "Кошки", "Грызуны", "Любые"];
 
 export default function VolunteerRegister() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -19,6 +20,8 @@ export default function VolunteerRegister() {
     hasSeparateRoom: false,
     maxFosterDays: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
 
   const toggleArray = (field, value) => {
     setForm((prev) => ({
@@ -33,15 +36,73 @@ export default function VolunteerRegister() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log(form);
-    // дальше — переход на шаг 2
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+    return data.url;
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setPhotoLoading(true);
+    try {
+      const photoUrl = await uploadFile(file);
+      handleChange("photo", photoUrl);
+    } catch (err) {
+      console.error("Ошибка загрузки фото:", err);
+      alert("Ошибка загрузки фото. Попробуйте другой файл.");
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (!form.fullName.trim()) {
+      alert("Введите ФИО");
+      return;
+    }
+    if (!form.phone.trim()) {
+      alert("Введите номер телефона");
+      return;
+    }
+    if (!form.city.trim()) {
+      alert("Введите город");
+      return;
+    }
+    
+    localStorage.setItem('volunteerStep1', JSON.stringify({
+      fullName: form.fullName,
+      phone: form.phone,
+      email: form.email,
+      city: form.city,
+      photo: form.photo, 
+      skills: form.skills,
+      hasExperience: form.hasExperience,
+      preferredAnimals: form.preferredAnimals,
+      considersFoster: form.considersFoster,
+      hasCage: form.hasCage,
+      hasSeparateRoom: form.hasSeparateRoom,
+      maxFosterDays: form.maxFosterDays,
+    }));
+    
+    navigate('/volunteer-register-2');
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 px-4">
       <div className="bg-white rounded-2xl shadow-md w-full max-w-xl p-8">
-
         {/* Прогресс */}
         <div className="flex gap-2 mb-6">
           <div className="h-1 flex-1 bg-green-600 rounded-full" />
@@ -116,13 +177,16 @@ export default function VolunteerRegister() {
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
           <div
-            onClick={() => document.getElementById("photoInput").click()}
-            className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-green-500 text-gray-400 text-xs text-center"
+            onClick={() => !photoLoading && document.getElementById("photoInput").click()}
+            className={`w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-green-500 text-gray-400 text-xs text-center ${photoLoading ? 'opacity-50 cursor-wait' : ''}`}
           >
-            {form.photo ? (
+            {photoLoading ? (
+              <>⏳<br />Загрузка...</>
+            ) : form.photo ? (
               <img
-                src={URL.createObjectURL(form.photo)}
+                src={`http://localhost:5000${form.photo}`}
                 className="w-full h-full rounded-full object-cover"
+                alt="Фото профиля"
               />
             ) : (
               <>📷<br />Загрузить</>
@@ -133,7 +197,7 @@ export default function VolunteerRegister() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => handleChange("photo", e.target.files[0])}
+            onChange={handlePhotoChange}
           />
         </div>
 
@@ -144,6 +208,7 @@ export default function VolunteerRegister() {
             {SKILLS.map((skill) => (
               <button
                 key={skill}
+                type="button"
                 onClick={() => toggleArray("skills", skill)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${form.skills.includes(skill)
@@ -177,6 +242,7 @@ export default function VolunteerRegister() {
             {ANIMALS.map((animal) => (
               <button
                 key={animal}
+                type="button"
                 onClick={() => toggleArray("preferredAnimals", animal)}
                 className={`px-3 py-1.5 rounded-full text-sm border transition
                   ${form.preferredAnimals.includes(animal)
@@ -231,12 +297,13 @@ export default function VolunteerRegister() {
         </div>
 
         {/* Кнопка */}
-        <Link
-          to="/volunteer-register-2"
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium p-3 rounded-xl text-base transition"
+        <button
+          onClick={handleNext}
+          disabled={loading}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium p-3 rounded-xl text-base transition disabled:opacity-50"
         >
-          Далее
-        </Link>
+          {loading ? "Загрузка..." : "Далее"}
+        </button>
       </div>
     </div>
   );
