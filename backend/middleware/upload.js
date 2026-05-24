@@ -4,7 +4,6 @@ const fs = require('fs');
 
 const uploadDir = path.join(__dirname, '..', 'uploads');
 
-// Создаём папку, если её нет
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -15,12 +14,15 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     let type = 'file';
+    
     if (req.originalUrl.includes('volunteer')) {
       type = 'volunteer';
+    } else if (req.originalUrl.includes('curator')) {
+      type = 'curator';
     } else if (req.originalUrl.includes('shelter')) {
       type = 'shelter';
-    } else if (req.originalUrl.includes('overexposure')) {
-      type = 'overexposure';
+    } else if (req.originalUrl.includes('owner')) {
+      type = 'owner';
     }
     
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -43,7 +45,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   fileFilter: fileFilter
 });
 

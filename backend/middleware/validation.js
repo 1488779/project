@@ -11,6 +11,15 @@ function isValidEmail(email) {
   return regex.test(email);
 }
 
+function isValidEmailOrPhone(value) {
+  if (!value) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailRegex.test(value)) return true;
+  const cleaned = value.replace(/[\s\-\(\)]/g, '');
+  const phoneRegex = /^(\+7|8)[0-9]{10}$/;
+  return phoneRegex.test(cleaned);
+}
+
 function isValidFullName(name) {
   if (!name || name.trim().length < 5) return false;
   const words = name.trim().split(/\s+/);
@@ -31,11 +40,17 @@ function isValidAddress(address) {
   return address && address.trim().length >= 5;
 }
 
+function isValidPassword(password) {
+  return password && password.length >= 6;
+}
+
 module.exports = {
   isValidPhone,
   isValidEmail,
+  isValidEmailOrPhone,
   isValidFullName,
   isValidCity,
   isValidOrgName,
-  isValidAddress
+  isValidAddress,
+  isValidPassword
 };

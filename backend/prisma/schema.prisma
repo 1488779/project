@@ -7,12 +7,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id              Int              @id @default(autoincrement())
+  email           String?          @unique
+  phone           String?          @unique
+  password        String
+  fullName        String?
+  city            String?
+  avatar          String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  extraData       Json?
+
+  volunteer       Volunteer?
+  curator         Curator?
+  owner           Owner?
+
+}
+
+model Volunteer {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  skills           String[]
+  hasExperience    Boolean   @default(false)
+  preferredAnimals String[]
+  considersFoster  Boolean   @default(false)
+  hasCage          Boolean?  @default(false)
+  hasSeparateRoom  Boolean?  @default(false)
+  maxFosterDays    Int?
+  availableTime    String?
+  districts        String[]
+  radius           String?
+  notifyEmail      Boolean   @default(false)
+  notifyPush       Boolean   @default(false)
+  notifyDigest     Boolean   @default(false)
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  extraData        Json?
+}
+
+model Curator {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  shelterId        Int
+  shelter          Shelter  @relation(fields: [shelterId], references: [id])
+  position         String?  @default("Куратор")
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  extraData        Json?
+}
+
+model Owner {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  contactPhone     String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  extraData        Json?
+}
+
+
+model Shelter {
+  id          Int      @id @default(autoincrement())
+  orgName     String
+  legalStatus String   @default("НКО")
+  description String?
+  phone       String
+  email       String
+  address     String
+  website     String?
+  logo        String?
+  requisites  String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  extraData   Json?
+
+  curators    Curator[]
+}
+
 model Animal {
   id          Int      @id @default(autoincrement())
   name        String
   age         String
   type        String
   description String?
+  
+  extraData Json?      
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -24,53 +116,9 @@ model Task {
   distance    Float
   icon        String
   status      String   @default("open")
+  
+  extraData Json?      
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-model Volunteer {
-  id               Int      @id @default(autoincrement())
-  fullName         String
-  phone            String
-  email            String?
-  city             String
-  photo            String?
-  skills           String[]
-  hasExperience    Boolean  @default(false)
-  preferredAnimals String[]
-  considersFoster  Boolean  @default(false)
-  hasCage          Boolean? @default(false)
-  hasSeparateRoom  Boolean? @default(false)
-  maxFosterDays    Int?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
-model Shelter {
-  id          Int      @id @default(autoincrement())
-  orgName     String
-  legalStatus String
-  phone       String
-  email       String
-  address     String
-  website     String?
-  logo        String?
-  requisites  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Overexposure {
-  id               Int      @id @default(autoincrement())
-  fullName         String
-  phone            String
-  email            String?
-  city             String
-  photo            String?
-  hasCage          Boolean? @default(false)
-  hasSeparateRoom  Boolean? @default(false)
-  hasOtherAnimals  Boolean? @default(false)
-  maxDays          Int?
-  acceptedAnimals  String[]
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 }
