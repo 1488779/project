@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 
 const eyeIcon = (
@@ -15,22 +17,34 @@ const eyeOffIcon = (
 );
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = () => {
+    setAuthError("");
     let hasError = false;
     if (!email.trim()) { setEmailError(true); hasError = true; } else setEmailError(false);
     if (!password.trim()) { setPasswordError(true); hasError = true; } else setPasswordError(false);
     if (hasError) return;
 
     setLoading(true);
-    setTimeout(() => setLoading(false), 1800);
+    try {
+      login(email, password);
+      navigate("/dashboard");
+    } catch (e) {
+      setAuthError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,75 +54,37 @@ export default function LoginPage() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
-
-        .login-card {
-          animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
+        .login-card { animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
         @keyframes cardIn {
           from { opacity: 0; transform: translateY(18px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .input-field {
-          transition: border-color 0.18s, box-shadow 0.18s;
-        }
-        .input-field:focus {
-          border-color: #2d7a2d !important;
-          box-shadow: 0 0 0 3px rgba(45,122,45,0.13);
-          outline: none;
-        }
-        .input-error {
-          border-color: #e53e3e !important;
-        }
-        .btn-login {
-          transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
-        }
-        .btn-login:hover:not(:disabled) {
-          background: #236023;
-          box-shadow: 0 4px 18px rgba(45,122,45,0.28);
-          transform: translateY(-1px);
-        }
-        .btn-login:active:not(:disabled) {
-          transform: translateY(0);
-        }
-        .link-green {
-          color: #2d7a2d;
-          transition: color 0.15s, text-decoration 0.15s;
-        }
-        .link-green:hover {
-          color: #1a5c1a;
-          text-decoration: underline;
-        }
-        .checkbox-custom {
-          accent-color: #2d7a2d;
-          width: 15px;
-          height: 15px;
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-        .spinner {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(255,255,255,0.4);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-          display: inline-block;
-        }
+        .input-field { transition: border-color 0.18s, box-shadow 0.18s; }
+        .input-field:focus { border-color: #2d7a2d !important; box-shadow: 0 0 0 3px rgba(45,122,45,0.13); outline: none; }
+        .input-error { border-color: #e53e3e !important; }
+        .btn-login { transition: background 0.18s, transform 0.12s, box-shadow 0.18s; }
+        .btn-login:hover:not(:disabled) { background: #236023; box-shadow: 0 4px 18px rgba(45,122,45,0.28); transform: translateY(-1px); }
+        .btn-login:active:not(:disabled) { transform: translateY(0); }
+        .link-green { color: #2d7a2d; transition: color 0.15s; }
+        .link-green:hover { color: #1a5c1a; text-decoration: underline; }
+        .checkbox-custom { accent-color: #2d7a2d; width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
-      <div
-        className="login-card bg-white rounded-2xl shadow-lg"
-        style={{ width: "100%", maxWidth: 380, padding: "40px 36px 36px" }}
-      >
-        {/* Title */}
+      <div className="login-card bg-white rounded-2xl shadow-lg" style={{ width: "100%", maxWidth: 380, padding: "40px 36px 36px" }}>
         <div className="text-center mb-6">
           <img src={logo} alt="logo" className="mx-auto block mb-3 w-13 h-14" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ letterSpacing: "-0.3px" }}>
-            Вход
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ letterSpacing: "-0.3px" }}>Вход</h1>
           <p className="text-sm text-gray-500">Войдите в свой аккаунт</p>
         </div>
+
+        {/* Общая ошибка авторизации */}
+        {authError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
+            {authError}
+          </div>
+        )}
 
         {/* Email */}
         <div className="mb-4">
@@ -118,14 +94,11 @@ export default function LoginPage() {
           <input
             type="text"
             value={email}
-            onChange={e => { setEmail(e.target.value); if (e.target.value) setEmailError(false); }}
+            onChange={e => { setEmail(e.target.value); if (e.target.value) setEmailError(false); setAuthError(""); }}
             placeholder="example@mail.com или +7..."
             className={`input-field w-full px-3 py-2.5 rounded-lg border text-sm text-gray-800 bg-white placeholder-gray-400 ${emailError ? "input-error" : "border-gray-300"}`}
-            style={{ fontSize: "0.875rem" }}
           />
-          {emailError && (
-            <p className="text-xs text-red-500 mt-1">Введите email или телефон</p>
-          )}
+          {emailError && <p className="text-xs text-red-500 mt-1">Введите email или телефон</p>}
         </div>
 
         {/* Password */}
@@ -137,33 +110,21 @@ export default function LoginPage() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={e => { setPassword(e.target.value); if (e.target.value) setPasswordError(false); }}
+              onChange={e => { setPassword(e.target.value); if (e.target.value) setPasswordError(false); setAuthError(""); }}
               placeholder="Введите пароль"
               className={`input-field w-full px-3 py-2.5 pr-10 rounded-lg border text-sm text-gray-800 bg-white placeholder-gray-400 ${passwordError ? "input-error" : "border-gray-300"}`}
-              style={{ fontSize: "0.875rem" }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
+            <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
               {showPassword ? eyeOffIcon : eyeIcon}
             </button>
           </div>
-          {passwordError && (
-            <p className="text-xs text-red-500 mt-1">Введите пароль</p>
-          )}
+          {passwordError && <p className="text-xs text-red-500 mt-1">Введите пароль</p>}
         </div>
 
         {/* Remember + Forgot */}
         <div className="flex items-center justify-between mb-5">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              className="checkbox-custom"
-              checked={remember}
-              onChange={e => setRemember(e.target.checked)}
-            />
+            <input type="checkbox" className="checkbox-custom" checked={remember} onChange={e => setRemember(e.target.checked)} />
             <span className="text-sm text-gray-600">Запомнить меня</span>
           </label>
           <button type="button" className="link-green text-sm font-medium bg-transparent border-none p-0 cursor-pointer">
@@ -187,12 +148,34 @@ export default function LoginPage() {
         <div className="text-center mt-5">
           <p className="text-sm text-gray-500">
             Ещё нет аккаунта?{" "}
-            <button type="button" className="link-green font-medium bg-transparent border-none p-0 cursor-pointer">
+            <button type="button" onClick={() => navigate("/role-selection")} className="link-green font-medium bg-transparent border-none p-0 cursor-pointer">
               Зарегистрироваться
             </button>
           </p>
         </div>
       </div>
+            {/* Быстрый вход для разработки */}
+      {import.meta.env.DEV && (
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          <p className="text-xs text-gray-400 text-center mb-2">Быстрый вход (только в dev)</p>
+          <div className="flex flex-col gap-2">
+            {[
+              { label: "Войти как волонтёр", email: "volunteer@test.com" },
+              { label: "Войти как куратор",  email: "curator@test.com"   },
+              { label: "Войти как владелец", email: "owner@test.com"     },
+            ].map(({ label, email }) => (
+              <button
+                key={email}
+                type="button"
+                onClick={() => { login(email, "1234"); navigate("/dashboard"); }}
+                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

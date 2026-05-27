@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const DISTRICTS = ["Центр", "Юго-Запад", "Северный", "Железнодорожный", "Вокзальный", "Ленинский", "Октябрьский"];
 
 export default function VolunteerRegister3() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [form, setForm] = useState({
     districts: [],
     radius: "10 км",
@@ -32,56 +35,64 @@ export default function VolunteerRegister3() {
 
   const handleSubmit = async () => {
     setError("");
-    
+
     if (!form.agreeTerms) {
       setError("Подтвердите согласие с правилами платформы");
       return;
     }
-    
+
     if (!password || password.length < 6) {
       setError("Пароль должен быть не менее 6 символов");
       return;
     }
-    
+
     setLoading(true);
-    
-    const step1 = JSON.parse(localStorage.getItem('volunteerStep1') || '{}');
-    const step2 = JSON.parse(localStorage.getItem('volunteerStep2') || '{}');
-    
+
+    const step1 = JSON.parse(localStorage.getItem("volunteerStep1") || "{}");
+    const step2 = JSON.parse(localStorage.getItem("volunteerStep2") || "{}");
+
     const allData = {
       ...step1,
       ...step2,
       ...form,
-      password: password,
+      password,
     };
-    
+
     try {
-      const response = await fetch('http://localhost:5000/api/volunteer/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(allData)
+      const response = await fetch("http://localhost:5000/api/volunteer/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(allData),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        alert('Регистрация успешна!');
-        localStorage.removeItem('volunteerStep1');
-        localStorage.removeItem('volunteerStep2');
-        navigate('/login-page');
+        localStorage.removeItem("volunteerStep1");
+        localStorage.removeItem("volunteerStep2");
+
+        // Логиним пользователя данными из формы и переходим в дашборд
+        login({
+          id: Date.now(),
+          name: step1.fullName || "Волонтёр",
+          email: step1.email || step1.phone,
+          role: "volunteer",
+        });
+
+        navigate("/dashboard");
       } else {
         setError(data.error || "Ошибка регистрации");
       }
-    } catch (error) {
-      console.error('Ошибка:', error);
-      setError('Ошибка соединения с сервером. Убедитесь, что сервер запущен.');
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setError("Ошибка соединения с сервером. Убедитесь, что сервер запущен.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleBack = () => {
-    navigate('/volunteer-register-2');
+    navigate("/volunteer-register-2");
   };
 
   return (
@@ -94,11 +105,8 @@ export default function VolunteerRegister3() {
           <div className="h-1 flex-1 bg-green-600 rounded-full" />
         </div>
 
-        <h1 className="text-xl font-bold text-gray-900 mb-6">
-          Завершение настройки профиля
-        </h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-6">Завершение настройки профиля</h1>
 
-        {/* Ошибка */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
             {error}
@@ -161,44 +169,25 @@ export default function VolunteerRegister3() {
 
         <div className="flex flex-col gap-3 mb-8">
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.notifyEmail}
-              onChange={(e) => handleChange("notifyEmail", e.target.checked)}
-            />
+            <input type="checkbox" checked={form.notifyEmail} onChange={(e) => handleChange("notifyEmail", e.target.checked)} />
             Получать уведомления о новых задачах по email
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.notifyPush}
-              onChange={(e) => handleChange("notifyPush", e.target.checked)}
-            />
+            <input type="checkbox" checked={form.notifyPush} onChange={(e) => handleChange("notifyPush", e.target.checked)} />
             Получать push-уведомления в браузере
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.notifyDigest}
-              onChange={(e) => handleChange("notifyDigest", e.target.checked)}
-            />
+            <input type="checkbox" checked={form.notifyDigest} onChange={(e) => handleChange("notifyDigest", e.target.checked)} />
             Получать дайджест раз в неделю
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.agreeTerms}
-              onChange={(e) => handleChange("agreeTerms", e.target.checked)}
-            />
+            <input type="checkbox" checked={form.agreeTerms} onChange={(e) => handleChange("agreeTerms", e.target.checked)} />
             Согласен с правилами и офертой платформы <span className="text-red-500">*</span>
           </label>
         </div>
 
         <div className="flex justify-between items-center">
-          <button
-            onClick={handleBack}
-            className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-xl text-sm transition"
-          >
+          <button onClick={handleBack} className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-xl text-sm transition">
             Назад
           </button>
           <button
