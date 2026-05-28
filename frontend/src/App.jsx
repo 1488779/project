@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import RoleSelection from "./pages/RoleSelection";
 import LoginPage from "./pages/LoginPage";
 import AnimalsPage from "./pages/AnimalsPage";
+import TasksPage from "./pages/Tasks";
 import HowToHelp from "./pages/HowToHelp";
 import SheltersPage from "./pages/SheltersPage";
 import AboutProject from "./pages/AboutProject";
@@ -30,6 +31,15 @@ import CuratorDashboard from "./pages/CuratorDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
 
 import VolunteerProfile from "./pages/VolunteerProfile";
+import ChatPage from "./pages/ChatPage";
+import AnimalCard from "./pages/AnimalCard";
+import TaskCard from "./pages/TaskCard";
+import OwnerRequests from "./pages/OwnerRequests";
+import VolunteerProposals from "./pages/VolunteerProposals";
+import NotificationsPage from "./pages/NotificationsPage";
+import CuratorTasks from "./pages/CuratorTasks";
+import AddAnimalPage from "./pages/AddAnimalPage";
+import CreateTaskPage from "./pages/CreateTaskPage";
 
 // ─── SmartHeader ──────────────────────────────────────────────────────────────
 
@@ -70,6 +80,7 @@ function AppContent() {
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/login-page"     element={<LoginPage />} />
         <Route path="/animals-page"   element={<AnimalsPage />} />
+        <Route path="/tasks-page"     element={<TasksPage />} />
         <Route path="/how-to-help"    element={<HowToHelp />} />
         <Route path="/shelters-page"  element={<SheltersPage />} />
         <Route path="/about-project"  element={<AboutProject />} />
@@ -97,6 +108,35 @@ function AppContent() {
         }/>
         <Route path="/profile" element={
           <PrivateRoute><VolunteerProfile /></PrivateRoute>
+        }/>
+
+        {/* Публичные детальные страницы */}
+        <Route path="/animals/:id"  element={<AnimalCard />} />
+        <Route path="/animals/card" element={<AnimalCard />} />
+        <Route path="/tasks/:id"    element={<TaskCard />} />
+        <Route path="/tasks/card"   element={<TaskCard />} />
+
+        {/* Авторизованные страницы */}
+        <Route path="/chat" element={
+          <PrivateRoute><ChatPage /></PrivateRoute>
+        }/>
+        <Route path="/notifications" element={
+          <PrivateRoute><NotificationsPage /></PrivateRoute>
+        }/>
+        <Route path="/volunteer/proposals" element={
+          <PrivateRoute allowedRoles={["volunteer"]}><VolunteerProposals /></PrivateRoute>
+        }/>
+        <Route path="/curator/tasks" element={
+          <PrivateRoute allowedRoles={["curator"]}><CuratorTasks /></PrivateRoute>
+        }/>
+        <Route path="/animals/new" element={
+          <PrivateRoute allowedRoles={["curator"]}><AddAnimalPage /></PrivateRoute>
+        }/>
+        <Route path="/tasks/new" element={
+          <PrivateRoute allowedRoles={["curator"]}><CreateTaskPage /></PrivateRoute>
+        }/>
+        <Route path="/owner/requests" element={
+          <PrivateRoute allowedRoles={["owner"]}><OwnerRequests /></PrivateRoute>
         }/>
       </Routes>
       <Footer />

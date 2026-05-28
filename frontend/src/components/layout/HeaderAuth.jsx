@@ -95,9 +95,21 @@ export default function HeaderAuth() {
                   <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                   <p className="text-xs text-gray-500">{ROLE_LABELS[user?.role] ?? user?.role}</p>
                 </div>
-                <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileOpen(false)}>
-                  Мой профиль
-                </Link>
+                {user?.role === "volunteer" && (
+                  <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileOpen(false)}>
+                    Мой профиль
+                  </Link>
+                )}
+                {user?.role === "owner" && (
+                  <Link to="/owner/requests" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileOpen(false)}>
+                    Мои заявки
+                  </Link>
+                )}
+                {user?.role === "curator" && (
+                  <Link to="/curator/tasks" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileOpen(false)}>
+                    Мои задачи
+                  </Link>
+                )}
                 <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileOpen(false)}>
                   Дашборд
                 </Link>
@@ -108,10 +120,13 @@ export default function HeaderAuth() {
             )}
           </div>
 
-          <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors relative">
+          <Link to="/notifications" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors relative">
             <BellIcon />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+          </Link>
+          <Link to="/chat" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" title="Чат">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+          </Link>
         </div>
       </div>
     </header>
