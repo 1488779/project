@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const SPECIES = ["Собака", "Кошка", "Кролик", "Птица", "Другое"];
 
 export default function AddAnimalPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     species: "Собака",
@@ -22,9 +26,77 @@ export default function AddAnimalPage() {
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  const handleSubmit = () => {
-    if (!form.name.trim()) return;
-    setSubmitted(true);
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+    return data.url;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) {
+      setError("Введите кличку");
+      return;
+    }
+    if (!form.age.trim()) {
+      setError("Введите возраст");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let photoUrl = null;
+      if (form.photo) {
+        photoUrl = await uploadFile(form.photo);
+      }
+
+      const animalData = {
+        name: form.name.trim(),
+        age: form.age.trim(),
+        type: form.species,
+        breed: form.breed || null,
+        color: form.color || null,
+        description: form.description || null,
+        weight: null,
+        isVaccinated: form.vaccinated,
+        isSterilized: form.sterilized,
+        isChipped: form.chipped,
+        specialConditions: form.conditions || null,
+        photos: photoUrl ? [photoUrl] : [],
+        createdById: user?.id || null,
+        shelterId: null  
+      };
+
+      const response = await fetch("http://localhost:5000/api/animals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(animalData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || "Ошибка при создании анкеты");
+      }
+    } catch (err) {
+      console.error("Ошибка:", err);
+      setError("Ошибка соединения с сервером");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -56,6 +128,13 @@ export default function AddAnimalPage() {
             ⚠️ Анкета животного пройдёт модерацию. После одобрения она появится в каталоге.
           </div>
 
+          {/* Ошибка */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="flex flex-col gap-5">
             {/* Кличка */}
             <div>
@@ -67,7 +146,7 @@ export default function AddAnimalPage() {
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="Рекс"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30 transition-all"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30"
               />
             </div>
 
@@ -98,7 +177,9 @@ export default function AddAnimalPage() {
             {/* Возраст + Окрас */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#424242] mb-1.5">Возраст</label>
+                <label className="block text-sm font-medium text-[#424242] mb-1.5">
+                  Возраст <span className="text-[#e53935]">*</span>
+                </label>
                 <input
                   type="text"
                   value={form.age}
@@ -153,7 +234,7 @@ export default function AddAnimalPage() {
               {[
                 { key: "vaccinated", label: "Вакцинирован" },
                 { key: "sterilized", label: "Стерилизован" },
-                { key: "chipped",    label: "Чипирован" },
+                { key: "chipped", label: "Чипирован" },
               ].map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2.5 cursor-pointer text-sm text-[#424242]">
                   <input
@@ -183,10 +264,10 @@ export default function AddAnimalPage() {
             <div className="flex gap-3 pt-1">
               <button
                 onClick={handleSubmit}
-                disabled={!form.name.trim()}
+                disabled={loading || !form.name.trim() || !form.age.trim()}
                 className="flex-1 bg-[#3a7d44] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
               >
-                Отправить на модерацию
+                {loading ? "Отправка..." : "Отправить на модерацию"}
               </button>
               <button
                 onClick={() => navigate(-1)}

@@ -42,6 +42,7 @@ async function createCuratorAccount(req, res) {
         email: data.emailOrPhone.includes('@') ? data.emailOrPhone : null,
         phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : null,
         password: await bcrypt.hash(data.password, saltRounds),
+        role: 'curator'
       }
     });
 

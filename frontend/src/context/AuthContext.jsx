@@ -1,10 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-
-const MOCK_USERS = [
-  { id: 1, name: "Иван Петров",     email: "volunteer@test.com", password: "1234", role: "volunteer" },
-  { id: 2, name: "Мария Иванова",   email: "curator@test.com",   password: "1234", role: "curator"   },
-  { id: 3, name: "Алексей Смирнов", email: "owner@test.com",     password: "1234", role: "owner"     },
-];
+import { api } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -23,23 +18,27 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem("currentUser");
   }, [user]);
 
-  const login = (emailOrUser, password) => {
-    // Если передан объект — это реальный юзер от сервера или из формы регистрации
-    if (typeof emailOrUser === "object" && emailOrUser !== null) {
-      setUser(emailOrUser);
-      return emailOrUser;
+  const login = async (emailOrPhone, password) => {
+    try {
+      const data = await api.login(emailOrPhone, password);
+      
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
+      setUser(data.user);
+      return data.user;
+    } catch (error) {
+      console.error('Ошибка входа:', error);
+      throw error;
     }
-
-    // Иначе ищем в моках по email + password
-    const found = MOCK_USERS.find(
-      (u) => u.email === emailOrUser && u.password === password
-    );
-    if (!found) throw new Error("Неверный email или пароль");
-    setUser(found);
-    return found;
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
