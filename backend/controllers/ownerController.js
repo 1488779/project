@@ -43,6 +43,7 @@ async function registerOwner(req, res) {
           phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : null,
           password: await bcrypt.hash(data.password, saltRounds),
           fullName: data.name || null,
+          role: 'owner'
         }
       });
 

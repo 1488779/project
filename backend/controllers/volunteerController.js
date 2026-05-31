@@ -31,6 +31,10 @@ async function registerVolunteer(req, res) {
     if (!isValidPassword(data.password)) {
       return res.status(400).json({ success: false, error: 'Пароль должен быть не менее 6 символов' });
     }
+    
+    if (!data.agreeTerms) {
+      return res.status(400).json({ success: false, error: 'Необходимо согласие с правилами платформы' });
+    }
 
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -54,6 +58,7 @@ async function registerVolunteer(req, res) {
           fullName: data.fullName,
           city: data.city,
           avatar: data.photo || null,
+          role: 'volunteer'
         }
       });
 

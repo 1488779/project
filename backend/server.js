@@ -11,9 +11,10 @@ const volunteerRoutes = require('./routes/volunteerRoutes');
 const ownerRoutes = require('./routes/ownerRoutes');
 const curatorRoutes = require('./routes/curatorRoutes');
 const shelterRoutes = require('./routes/shelterRoutes');
-const uploadRoutes = require('./routes/upload');
-const animalsRoutes = require('./routes/animals');
-const tasksRoutes = require('./routes/tasks');
+const uploadRoutes = require('./routes/uploadRoutes');
+const animalsRoutes = require('./routes/animalsRoutes');
+const tasksRoutes = require('./routes/tasksRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -43,6 +44,7 @@ app.use('/api/shelters', shelterRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/animals', animalsRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/auth', authRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Маршрут не найден' });

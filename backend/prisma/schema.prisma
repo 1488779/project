@@ -7,24 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
-  id              Int              @id @default(autoincrement())
-  email           String?          @unique
-  phone           String?          @unique
-  password        String
-  fullName        String?
-  city            String?
-  avatar          String?
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  extraData       Json?
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  phone     String?  @unique
+  password  String
+  fullName  String?
+  city      String?
+  avatar    String?
+  role      String   @default("volunteer")  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  volunteer       Volunteer?
-  curator         Curator?
-  owner           Owner?
+  volunteer   Volunteer?
+  curator     Curator?
+  owner       Owner?
 
+  createdAnimals Animal[] @relation("AnimalCreator")
+  createdTasks   Task[]   @relation("TaskCreator")
+  notifications  Notification[]
 }
+
 
 model Volunteer {
   id               Int      @id @default(autoincrement())
@@ -32,93 +36,188 @@ model Volunteer {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   skills           String[]
-  hasExperience    Boolean   @default(false)
+  hasExperience    Boolean  @default(false)
   preferredAnimals String[]
-  considersFoster  Boolean   @default(false)
-  hasCage          Boolean?  @default(false)
-  hasSeparateRoom  Boolean?  @default(false)
+  considersFoster  Boolean  @default(false)
+  hasCage          Boolean? @default(false)
+  hasSeparateRoom  Boolean? @default(false)
   maxFosterDays    Int?
   availableTime    String?
   districts        String[]
   radius           String?
-  notifyEmail      Boolean   @default(false)
-  notifyPush       Boolean   @default(false)
-  notifyDigest     Boolean   @default(false)
+  notifyEmail      Boolean  @default(false)
+  notifyPush       Boolean  @default(false)
+  notifyDigest     Boolean  @default(false)
   
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  extraData        Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  fosterRequests   FosterRequest[]
+  taskProposals    TaskProposal[]
+  tasks            Task[]
 }
+
 
 model Curator {
-  id               Int      @id @default(autoincrement())
-  userId           Int      @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shelterId  Int
+  shelter    Shelter  @relation(fields: [shelterId], references: [id])
   
-  shelterId        Int
-  shelter          Shelter  @relation(fields: [shelterId], references: [id])
-  position         String?  @default("Куратор")
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  extraData        Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
+
 model Owner {
-  id               Int      @id @default(autoincrement())
-  userId           Int      @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactPhone String?
   
-  contactPhone     String?
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  extraData        Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fosterRequests FosterRequest[]
 }
 
 
 model Shelter {
   id          Int      @id @default(autoincrement())
   orgName     String
-  legalStatus String   @default("НКО")
   description String?
   phone       String
   email       String
   address     String
-  website     String?
   logo        String?
-  requisites  String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  extraData   Json?
 
   curators    Curator[]
+  animals     Animal[] @relation("ShelterAnimals")
+  tasks       Task[]
 }
 
 model Animal {
   id          Int      @id @default(autoincrement())
+
   name        String
   age         String
-  type        String
+  type        String    
+  breed       String?   
+  color       String?   
   description String?
+  weight      Float?    
+
+  isVaccinated Boolean  @default(false)
+  isSterilized Boolean  @default(false)
+  isChipped    Boolean  @default(false)
+
+  specialConditions String?   
+
+  photos      String[]  
+
+  moderationStatus String   @default("pending")  
+
+  createdById Int?
+  createdBy   User?    @relation("AnimalCreator", fields: [createdById], references: [id])
+  shelterId   Int?
+  shelter     Shelter? @relation("ShelterAnimals", fields: [shelterId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fosterRequests FosterRequest[]
+}
+
+
+
+model Task {
+  id          Int      @id @default(autoincrement())
+
+  title       String
+  description String?  
+  category    String? 
+
+  shelterId   Int?
+  shelter     Shelter? @relation(fields: [shelterId], references: [id])
   
-  extraData Json?      
+  address     String?  
+  
+  date        String?
+  timeFrom    String?
+  timeTo      String?
+  
+  skills      String[]
+  
+  isUrgent    Boolean   @default(false)
+  
+  contactName String?
+  contactRole String?
+  contactPhone String?
+  
+  status           String   @default("open")        
+  moderationStatus String   @default("pending")     
+  
+  photos      String[]
+  
+  createdById Int?
+  createdBy   User?    @relation("TaskCreator", fields: [createdById], references: [id])
+  volunteerId Int?
+  volunteer   Volunteer? @relation(fields: [volunteerId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model FosterRequest {
+  id          Int      @id @default(autoincrement())
+  
+  animalId    Int?
+  animal      Animal?  @relation(fields: [animalId], references: [id])
+  
+  ownerId     Int
+  owner       Owner    @relation(fields: [ownerId], references: [id])
+  
+  volunteerId Int
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
+  
+  animalType  String
+  days        Int
+  needsMeds   Boolean  @default(false)
+  status      String   @default("pending")  
+  message     String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-model Task {
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  type      String   
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+
+model TaskProposal {
   id          Int      @id @default(autoincrement())
+  volunteerId Int
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
   title       String
-  shelter     String
-  distance    Float
-  icon        String
-  status      String   @default("open")
-  
-  extraData Json?      
-  
+  category    String?
+  description String
+  status      String   @default("pending") 
+  rejectionReason String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

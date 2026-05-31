@@ -32,6 +32,9 @@ export const api = {
   // Shelters
   getShelters:     ()  => request("/api/shelters"),
 
-  // Auth (TODO: бэкендер добавит эндпоинт)
-  // login: (data) => request("/api/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  //Auth 
+  login: (emailOrPhone, password) => request("/api/auth/login", { 
+    method: "POST", 
+    body: JSON.stringify({ emailOrPhone, password }) 
+  }),
 };
