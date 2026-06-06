@@ -29,23 +29,24 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    setAuthError("");
-    let hasError = false;
-    if (!email.trim()) { setEmailError(true); hasError = true; } else setEmailError(false);
-    if (!password.trim()) { setPasswordError(true); hasError = true; } else setPasswordError(false);
-    if (hasError) return;
 
-    setLoading(true);
-    try {
-      login(email, password);
-      navigate("/dashboard");
-    } catch (e) {
-      setAuthError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleSubmit = async () => {
+  setAuthError("");
+  let hasError = false;
+  if (!email.trim()) { setEmailError(true); hasError = true; } else setEmailError(false);
+  if (!password.trim()) { setPasswordError(true); hasError = true; } else setPasswordError(false);
+  if (hasError) return;
+
+  setLoading(true);
+  try {
+    await login(email, password);
+    navigate("/dashboard");
+  } catch (e) {
+    setAuthError(e.message || "Ошибка входа");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div
@@ -167,7 +168,7 @@ export default function LoginPage() {
               <button
                 key={email}
                 type="button"
-                onClick={() => { login(email, "1234"); navigate("/dashboard"); }}
+                onClick={async () => { await login(email, "1234"); navigate("/dashboard"); }}
                 className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 {label}

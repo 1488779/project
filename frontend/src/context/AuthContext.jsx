@@ -3,6 +3,12 @@ import { api } from "../api";
 
 const AuthContext = createContext(null);
 
+const MOCK_USERS = {
+  "volunteer@test.com": { id: 1, role: "volunteer", name: "Тест Волонтёр" },
+  "curator@test.com":   { id: 2, role: "curator",   name: "Тест Куратор"  },
+  "owner@test.com":     { id: 3, role: "owner",     name: "Тест Владелец" },
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
@@ -19,6 +25,13 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const login = async (emailOrPhone, password) => {
+    if (import.meta.env.DEV && MOCK_USERS[emailOrPhone]) {
+      const user = MOCK_USERS[emailOrPhone];
+      localStorage.setItem("token", "mock-token-" + user.role);
+      setUser(user);
+      return user;
+    }
+    
     try {
       const data = await api.login(emailOrPhone, password);
       

@@ -1,31 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const TABS = ["Все", "Ожидают", "Одобрены", "Отклонены"];
-
-const TASKS = [
-  {
-    id: 1,
-    title: "Доставить корм",
-    created: "2 дня назад",
-    status: "pending",
-    volunteer: null,
-  },
-  {
-    id: 2,
-    title: "Выгул собак",
-    created: "вчера",
-    status: "approved",
-    volunteer: "Иван П.",
-  },
-  {
-    id: 3,
-    title: "Ремонт вольера",
-    created: "3 дня назад",
-    status: "rejected",
-    volunteer: null,
-  },
-];
 
 const STATUS_META = {
   pending:  { label: "На модерации", emoji: "🟡", textColor: "text-[#f57c00]", bg: "bg-[#fff3e0]" },
@@ -35,18 +13,58 @@ const STATUS_META = {
 
 const TAB_FILTER = {
   "Все":       () => true,
-  "Ожидают":   (t) => t.status === "pending",
-  "Одобрены":  (t) => t.status === "approved",
-  "Отклонены": (t) => t.status === "rejected",
+  "Ожидают":   (t) => t.moderationStatus === "pending",
+  "Одобрены":  (t) => t.moderationStatus === "approved",
+  "Отклонены": (t) => t.moderationStatus === "rejected",
 };
 
+function formatDate(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return iso;
+  }
+}
+
 export default function CuratorTasks() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("Все");
-  const [tasks, setTasks] = useState(TASKS);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Загружаем все задачи — curator видит свои через shelterId
+      const data = await api.getAllTasksAdmin();
+      // Фильтруем по shelterId куратора если есть
+      const mine = user?.shelterId
+        ? data.filter((t) => t.shelterId === user.shelterId)
+        : data;
+      setTasks(mine);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [user]);
+
+  const remove = async (id) => {
+    if (!window.confirm("Удалить задачу?")) return;
+    try {
+      await api.deleteTask(id);
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    } catch (e) {
+      alert("Ошибка: " + e.message);
+    }
+  };
 
   const filtered = tasks.filter(TAB_FILTER[activeTab]);
-
-  const remove = (id) => setTasks((prev) => prev.filter((t) => t.id !== id));
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -62,7 +80,6 @@ export default function CuratorTasks() {
           </Link>
         </div>
 
-        {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-5">
           {TABS.map((tab) => (
             <button
@@ -79,60 +96,79 @@ export default function CuratorTasks() {
           ))}
         </div>
 
-        {/* List */}
-        <div className="flex flex-col gap-3">
-          {filtered.length === 0 && (
-            <div className="bg-white rounded-2xl p-10 text-center text-[#9e9e9e] text-sm">
-              Задач нет
-            </div>
-          )}
-          {filtered.map((t) => {
-            const meta = STATUS_META[t.status];
-            return (
-              <div key={t.id} className="bg-white rounded-2xl px-6 py-5 shadow-sm flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-bold text-[#212121] mb-0.5">{t.title}</h2>
-                  <p className="text-xs text-[#9e9e9e] mb-2">Создана {t.created}</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.bg} ${meta.textColor}`}>
-                      <span>{meta.emoji}</span> {meta.label}
-                    </span>
-                    {t.volunteer && (
-                      <span className="text-xs text-[#9e9e9e]">• Волонтёр: {t.volunteer}</span>
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl px-6 py-5 shadow-sm animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/3" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-white rounded-2xl p-6 text-center text-[#e53935] text-sm">
+            Ошибка: {error}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="flex flex-col gap-3">
+            {filtered.length === 0 && (
+              <div className="bg-white rounded-2xl p-10 text-center text-[#9e9e9e] text-sm">
+                Задач нет
+              </div>
+            )}
+            {filtered.map((t) => {
+              const meta = STATUS_META[t.moderationStatus] || STATUS_META.pending;
+              const volunteer = t.volunteerName || t.volunteer || null;
+              return (
+                <div key={t.id} className="bg-white rounded-2xl px-6 py-5 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-bold text-[#212121] mb-0.5">{t.title}</h2>
+                    <p className="text-xs text-[#9e9e9e] mb-2">Создана {formatDate(t.createdAt)}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.bg} ${meta.textColor}`}>
+                        <span>{meta.emoji}</span> {meta.label}
+                      </span>
+                      {volunteer && (
+                        <span className="text-xs text-[#9e9e9e]">• Волонтёр: {volunteer}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {t.moderationStatus === "pending" && (
+                      <>
+                        <button
+                          onClick={() => remove(t.id)}
+                          className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#616161] text-sm font-bold hover:border-[#e53935] hover:text-[#e53935] transition-colors"
+                        >
+                          Снять
+                        </button>
+                        <Link
+                          to={`/tasks/${t.id}/edit`}
+                          className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#616161] text-sm font-bold hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
+                        >
+                          Редактировать
+                        </Link>
+                      </>
+                    )}
+                    {t.moderationStatus === "approved" && (
+                      <button
+                        onClick={() => remove(t.id)}
+                        className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#e53935] text-sm font-bold hover:border-[#e53935] transition-colors"
+                      >
+                        Закрыть
+                      </button>
                     )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {t.status === "pending" && (
-                    <>
-                      <button
-                        onClick={() => remove(t.id)}
-                        className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#616161] text-sm font-bold hover:border-[#e53935] hover:text-[#e53935] transition-colors"
-                      >
-                        Снять
-                      </button>
-                      <Link
-                        to={`/tasks/${t.id}/edit`}
-                        className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#616161] text-sm font-bold hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
-                      >
-                        Редактировать
-                      </Link>
-                    </>
-                  )}
-                  {t.status === "approved" && (
-                    <button
-                      onClick={() => remove(t.id)}
-                      className="px-4 py-2 rounded-xl border-[1.5px] border-[#e0e0e0] text-[#e53935] text-sm font-bold hover:border-[#e53935] transition-colors"
-                    >
-                      Закрыть
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
