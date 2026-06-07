@@ -26,17 +26,13 @@ export default function VolunteerProfile() {
 
     const load = async () => {
       try {
-        setLoading(true);
-        // Загружаем профиль волонтёра
-        const volId = user.volunteerId ?? user.id;
-        const volData = await api.getVolunteerById(volId);
-        setVolunteer(volData.data ?? volData);
-
-        // Загружаем задачи волонтёра
-        const allTasks = await api.getTasks();
-        const myTasks = allTasks.filter((t) => t.volunteerId === volId);
-        setActiveTasks(myTasks.filter((t) => t.status === "in_progress" || t.status === "open"));
-        setDoneTasks(myTasks.filter((t) => t.status === "done"));
+        setLoading(true);       
+        const profileData = await api.getMyProfile();
+        setVolunteer(profileData.data);
+        const activeData = await api.getMyActiveTasks();
+        setActiveTasks(activeData.data);
+        const historyData = await api.getMyHistory();
+        setDoneTasks(historyData.data);
       } catch (e) {
         setError(e.message);
       } finally {
@@ -48,10 +44,11 @@ export default function VolunteerProfile() {
 
   const completeTask = async (id) => {
     try {
-      await api.completeTask(id);
-      setActiveTasks((prev) => prev.filter((t) => t.id !== id));
-      const task = activeTasks.find((t) => t.id === id);
-      if (task) setDoneTasks((prev) => [{ ...task, status: "done" }, ...prev]);
+      await api.completeMyTask(id);
+      const activeData = await api.getMyActiveTasks();
+      setActiveTasks(activeData.data);
+      const historyData = await api.getMyHistory();
+      setDoneTasks(historyData.data);
     } catch (e) {
       alert("Ошибка: " + e.message);
     }
@@ -74,29 +71,22 @@ export default function VolunteerProfile() {
     );
   }
 
-  const u = volunteer.user ?? volunteer;
-  const name = u.fullName ?? u.name ?? "Волонтёр";
-  const city = u.city ?? volunteer.city ?? "—";
-  const avatar = u.avatar ?? volunteer.avatar ?? null;
+  const name = volunteer.name ?? "Волонтёр";
+  const city = volunteer.city ?? "—";
+  const avatar = volunteer.avatar ?? null;
   const skills = volunteer.skills ?? [];
-
-  const stats = {
-    tasks: doneTasks.length,
-    hours: doneTasks.length * 2, // примерная оценка
-    saved: Math.floor(doneTasks.length / 5),
-  };
+  const stats = volunteer.stats ?? { tasks: 0, hours: 0, saved: 0 };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-10">
 
-        {/* Профиль */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-2xl overflow-hidden">
               {avatar ? (
                 <img
-                  src={avatar.startsWith("http") ? avatar : `${BASE}/${avatar}`}
+                  src={avatar.startsWith("http") ? avatar : `${BASE}${avatar}`}
                   className="w-full h-full object-cover"
                   alt={name}
                 />
@@ -109,7 +99,6 @@ export default function VolunteerProfile() {
           </div>
         </div>
 
-        {/* Статистика */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { value: stats.tasks, label: "Выполнено задач" },
@@ -123,7 +112,6 @@ export default function VolunteerProfile() {
           ))}
         </div>
 
-        {/* Навыки */}
         {skills.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-3">Мои навыки</h2>
@@ -140,7 +128,6 @@ export default function VolunteerProfile() {
           </div>
         )}
 
-        {/* Активные задачи */}
         <div className="mb-8">
           <h2 className="text-lg font-bold text-gray-900 mb-3">Мои задачи</h2>
           {activeTasks.length === 0 ? (
@@ -155,9 +142,7 @@ export default function VolunteerProfile() {
                     <p className="text-sm font-medium text-gray-900">{task.title}</p>
                     <p className="text-xs text-gray-500">{task.shelter ?? "—"}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {task.date ? formatDate(task.date) : "Дата не указана"}
-                      {" • "}
-                      {task.status === "in_progress" ? "В работе" : "Открыта"}
+                      {task.datetime ?? "Дата не указана"} • {task.status}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -180,7 +165,6 @@ export default function VolunteerProfile() {
           )}
         </div>
 
-        {/* История */}
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-3">История</h2>
           {doneTasks.length === 0 ? (
@@ -196,7 +180,7 @@ export default function VolunteerProfile() {
                     <p className="text-xs text-gray-500">{item.shelter ?? "—"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-400">{formatDate(item.updatedAt ?? item.createdAt)}</p>
+                    <p className="text-xs text-gray-400">{item.date}</p>
                     <p className="text-xs text-green-600 mt-0.5">✓ Завершено</p>
                   </div>
                 </div>

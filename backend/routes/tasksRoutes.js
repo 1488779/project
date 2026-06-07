@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const {
   getAllTasks,
   getTaskById,
@@ -11,14 +12,18 @@ const {
   updateTask,
   deleteTask,
   takeTask,
-  completeTask
+  completeTask,
+  getMyCreatedTasks
 } = require('../controllers/taskController');
 
 
 router.get('/', getAllTasks);
+router.get('/my', authenticateToken, getMyCreatedTasks);
+router.get('/admin/all', authenticateToken, getAllTasksAdmin);
+router.get('/moderation/:status', authenticateToken, getTasksByModerationStatus);
 router.get('/:id', getTaskById);
-router.get('/all', getAllTasksAdmin);
-router.get('/moderation/:status', getTasksByModerationStatus);
+
+router.use(authenticateToken);
 
 router.put('/:id/approve', approveTask);
 router.put('/:id/reject', rejectTask);

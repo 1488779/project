@@ -27,6 +27,7 @@ model User {
   createdAnimals Animal[] @relation("AnimalCreator")
   createdTasks   Task[]   @relation("TaskCreator")
   notifications  Notification[]
+  adoptedAnimals Animal[] @relation("AnimalAdopter")
 }
 
 
@@ -120,6 +121,11 @@ model Animal {
   photos      String[]  
 
   moderationStatus String   @default("pending")  
+
+  adopted     Boolean  @default(false)
+  adoptedAt   DateTime?
+  adoptedBy   Int?
+  adopter     User?    @relation("AnimalAdopter", fields: [adoptedBy], references: [id])
 
   createdById Int?
   createdBy   User?    @relation("AnimalCreator", fields: [createdById], references: [id])

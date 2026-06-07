@@ -35,33 +35,37 @@ export default function VolunteerDashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("Рекомендации");
 
-  const [tasks, setTasks]     = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [loadingT, setLoadingT] = useState(true);
   const [loadingA, setLoadingA] = useState(true);
 
   useEffect(() => {
+    // Загружаем одобренные задачи
     api.getTasks()
       .then(setTasks)
+      .catch(err => console.error('Ошибка загрузки задач:', err))
       .finally(() => setLoadingT(false));
+    
+    // Загружаем одобренных животных
     api.getAnimals()
       .then(setAnimals)
+      .catch(err => console.error('Ошибка загрузки животных:', err))
       .finally(() => setLoadingA(false));
   }, []);
 
   const emoji = (type) => {
     const t = (type ?? "").toLowerCase();
     if (t.includes("кош") || t.includes("кот")) return "🐈";
-    return "🐕";
+    if (t.includes("собак") || t.includes("пёс")) return "🐕";
+    return "🐾";
   };
 
-  // Urgent = первые 2 задачи (нет статуса "срочная" в схеме, берём первые)
-  const urgentTasks = tasks.slice(0, 2);
+  const urgentTasks = tasks.filter(t => t.isUrgent === true).slice(0, 2);
   const recommended = tasks.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
-      {/* Filter bar */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
           {FILTERS.map((f) => (
@@ -81,7 +85,6 @@ export default function VolunteerDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
-        {/* Recommended tasks */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-extrabold text-[#212121]">Рекомендовано для вас</h2>
@@ -99,15 +102,10 @@ export default function VolunteerDashboard() {
                 className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
               >
                 <div className="w-11 h-11 rounded-xl bg-[#e8f5e9] flex items-center justify-center text-2xl mb-3">
-                  {ICON_MAP[t.icon] ?? "📋"}
+                  {t.icon ?? "📋"}
                 </div>
                 <p className="text-sm font-bold text-[#212121] mb-1 leading-snug">{t.title}</p>
                 <p className="text-xs text-[#9e9e9e] mb-1">{t.shelter}</p>
-                {t.distance != null && (
-                  <p className="text-xs text-[#616161] mb-3 flex items-center gap-1">
-                    <span className="text-[#e53935]">♥</span> {t.distance} км
-                  </p>
-                )}
                 <button className="bg-[#e8f5e9] text-[#3a7d44] text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#3a7d44] hover:text-white transition-colors">
                   Взять →
                 </button>
@@ -116,7 +114,6 @@ export default function VolunteerDashboard() {
           </div>
         </section>
 
-        {/* Animals nearby */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-extrabold text-[#212121]">Животные рядом</h2>
@@ -148,7 +145,6 @@ export default function VolunteerDashboard() {
           </div>
         </section>
 
-        {/* Urgent tasks */}
         {urgentTasks.length > 0 && (
           <section>
             <h2 className="text-xl font-extrabold text-[#212121] mb-4">Срочные задачи</h2>
