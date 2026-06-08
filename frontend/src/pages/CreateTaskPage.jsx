@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const CATEGORIES = ["Транспорт", "Выгул", "Ветеринария", "Уборка", "Ремонт", "Фото", "Сбор средств", "Другое"];
 const ALL_SKILLS  = ["Транспорт", "Выгул", "Фото", "Ветеринария", "Физическая сила", "Ремонт"];
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({
     title: "",
     category: "Транспорт",
@@ -17,7 +20,8 @@ export default function CreateTaskPage() {
     urgent: false,
     skills: ["Транспорт"],
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
@@ -30,28 +34,43 @@ export default function CreateTaskPage() {
     }));
   };
 
-  const handleSubmit = () => {
-    if (!form.title.trim()) return;
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    if (!form.title.trim()) {
+      setError("Введите название задачи");
+      return;
+    }
+    
+    setSubmitting(true);
+    setError("");
+    
+    try {
+      let photoUrl = null;
+      if (form.photo) {
+        const uploadResult = await api.uploadFile(form.photo);
+        photoUrl = uploadResult.url;
+      }
+      
+      const taskData = {
+        title: form.title,
+        category: form.category,
+        description: form.description,
+        date: form.date || null,
+        timeFrom: form.time || null,
+        address: form.address || null,
+        skills: form.skills,
+        isUrgent: form.urgent,
+        photos: photoUrl ? [photoUrl] : [],
+        createdById: user?.id
+      };
+      
+      await api.createTask(taskData);
+      navigate("/curator/tasks");
+    } catch (err) {
+      setError(err.message || "Ошибка создания задачи");
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-[#f2f3f1] flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-sm p-10 text-center max-w-sm w-full">
-          <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-xl font-extrabold text-[#212121] mb-2">Задача отправлена!</h2>
-          <p className="text-sm text-[#616161] mb-6">После проверки администратором она станет доступна волонтёрам.</p>
-          <button
-            onClick={() => navigate("/curator/tasks")}
-            className="w-full bg-[#3a7d44] text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
-          >
-            Мои задачи
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -59,13 +78,17 @@ export default function CreateTaskPage() {
         <div className="bg-white rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-extrabold text-[#212121] mb-4">Создать задачу</h1>
 
-          {/* Notice */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="bg-[#fff8e1] border border-[#ffe082] rounded-xl px-4 py-3 text-sm text-[#b28704] mb-6">
             ⚠️ Задача будет отправлена на модерацию. После проверки администратором она станет доступна волонтёрам.
           </div>
 
           <div className="flex flex-col gap-5">
-            {/* Название */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">
                 Название <span className="text-[#e53935]">*</span>
@@ -79,7 +102,6 @@ export default function CreateTaskPage() {
               />
             </div>
 
-            {/* Категория */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Категория</label>
               <select
@@ -91,7 +113,6 @@ export default function CreateTaskPage() {
               </select>
             </div>
 
-            {/* Описание */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Описание</label>
               <textarea
@@ -103,7 +124,6 @@ export default function CreateTaskPage() {
               />
             </div>
 
-            {/* Фото */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Фото</label>
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#3a7d44] hover:bg-[#f0f7f1] transition-all">
@@ -120,7 +140,6 @@ export default function CreateTaskPage() {
               </label>
             </div>
 
-            {/* Дата + Время */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#424242] mb-1.5">Дата</label>
@@ -142,7 +161,6 @@ export default function CreateTaskPage() {
               </div>
             </div>
 
-            {/* Адрес */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Адрес</label>
               <input
@@ -152,13 +170,11 @@ export default function CreateTaskPage() {
                 placeholder="ул. Мира, 28, Екатеринбург"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30"
               />
-              {/* Map placeholder */}
               <div className="mt-2 bg-[#f5f5f5] rounded-xl h-24 flex items-center justify-center text-[#9e9e9e] text-sm">
                 🗺️ Карта
               </div>
             </div>
 
-            {/* Срочно toggle */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-[#424242]">Срочно</span>
               <button
@@ -175,7 +191,6 @@ export default function CreateTaskPage() {
               </button>
             </div>
 
-            {/* Требуемые навыки */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-2">Требуемые навыки</label>
               <div className="flex flex-wrap gap-2">
@@ -198,14 +213,13 @@ export default function CreateTaskPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-1">
               <button
                 onClick={handleSubmit}
-                disabled={!form.title.trim()}
+                disabled={submitting || !form.title.trim()}
                 className="flex-1 bg-[#3a7d44] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
               >
-                Отправить на модерацию
+                {submitting ? "Отправка..." : "Отправить на модерацию"}
               </button>
               <button
                 onClick={() => navigate(-1)}

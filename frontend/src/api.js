@@ -53,6 +53,7 @@ export const api = {
   rejectTask: (id, reason) => request(`/api/tasks/${id}/reject`, { method: "PUT", body: JSON.stringify({ reason }) }),
   takeTask: (id, volunteerId) => request(`/api/tasks/${id}/take`, { method: "PUT", body: JSON.stringify({ volunteerId }) }),
   completeTask: (id) => request(`/api/tasks/${id}/complete`, { method: "PUT" }),
+  getShelterTasks: () => request("/api/tasks/shelter"),
 
   //VOLUNTEERS
   getVolunteers: () => request("/api/volunteer"),
@@ -62,7 +63,6 @@ export const api = {
   updateMyProfile: (data) => request("/api/volunteer/profile/me", { method: "PUT", body: JSON.stringify(data) }),
   updateMySkills: (skills) => request("/api/volunteer/profile/skills", { method: "PUT", body: JSON.stringify({ skills }) }),
   getMyActiveTasks: () => request("/api/volunteer/tasks/active"),
-  completeMyTask: (taskId) => request(`/api/volunteer/tasks/${taskId}/complete`, { method: "PATCH" }),
   getMyHistory: () => request("/api/volunteer/history"),
 
   //CURATORS

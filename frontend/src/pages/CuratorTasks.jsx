@@ -35,22 +35,17 @@ export default function CuratorTasks() {
   const [error, setError] = useState(null);
 
   const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      // Загружаем все задачи — curator видит свои через shelterId
-      const data = await api.getAllTasksAdmin();
-      // Фильтруем по shelterId куратора если есть
-      const mine = user?.shelterId
-        ? data.filter((t) => t.shelterId === user.shelterId)
-        : data;
-      setTasks(mine);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    setError(null);
+    const data = await api.getMyCreatedTasks();
+    setTasks(data);
+  } catch (e) {
+    setError(e.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => { load(); }, [user]);
 

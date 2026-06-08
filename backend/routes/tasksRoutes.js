@@ -13,12 +13,13 @@ const {
   deleteTask,
   takeTask,
   completeTask,
-  getMyCreatedTasks
+  getMyCreatedTasks,
+  getShelterTasks
 } = require('../controllers/taskController');
-
 
 router.get('/', getAllTasks);
 router.get('/my', authenticateToken, getMyCreatedTasks);
+router.get('/shelter', authenticateToken, getShelterTasks);
 router.get('/admin/all', authenticateToken, getAllTasksAdmin);
 router.get('/moderation/:status', authenticateToken, getTasksByModerationStatus);
 router.get('/:id', getTaskById);

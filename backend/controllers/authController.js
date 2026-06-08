@@ -28,13 +28,27 @@ async function login(req, res) {
     }
     
     let role = null;
+    let shelterId = null;
+    let shelterName = null;
+    
     const volunteer = await prisma.volunteer.findUnique({ where: { userId: user.id } });
     const curator = await prisma.curator.findUnique({ where: { userId: user.id } });
     const owner = await prisma.owner.findUnique({ where: { userId: user.id } });
     
-    if (volunteer) role = 'volunteer';
-    else if (curator) role = 'curator';
-    else if (owner) role = 'owner';
+    if (volunteer) {
+      role = 'volunteer';
+    } else if (curator) {
+      role = 'curator';
+      shelterId = curator.shelterId;
+      
+      const shelter = await prisma.shelter.findUnique({
+        where: { id: curator.shelterId },
+        select: { orgName: true }
+      });
+      shelterName = shelter?.orgName || null;
+    } else if (owner) {
+      role = 'owner';
+    }
     
     const token = jwt.sign(
       { id: user.id, email: user.email, role },
@@ -50,7 +64,9 @@ async function login(req, res) {
         name: user.fullName,
         email: user.email,
         phone: user.phone,
-        role
+        role,
+        shelterId,
+        shelterName
       }
     });
   } catch (error) {

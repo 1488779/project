@@ -23,7 +23,6 @@ router.get('/profile/me', getMyProfile);
 router.put('/profile/me', updateMyProfile);
 router.put('/profile/skills', updateMySkills);
 router.get('/tasks/active', getMyActiveTasks);
-router.patch('/tasks/:taskId/complete', completeMyTask);
 router.get('/history', getMyTaskHistory);
 router.get('/:id', getVolunteerById);
 

@@ -44,7 +44,7 @@ export default function VolunteerProfile() {
 
   const completeTask = async (id) => {
     try {
-      await api.completeMyTask(id);
+      await api.completeTask(id);
       const activeData = await api.getMyActiveTasks();
       setActiveTasks(activeData.data);
       const historyData = await api.getMyHistory();
