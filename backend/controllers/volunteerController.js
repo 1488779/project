@@ -49,7 +49,7 @@ async function registerVolunteer(req, res) {
       return res.status(409).json({ success: false, error: 'Пользователь с таким email или телефоном уже зарегистрирован' });
     }
 
-    const result = await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       const user = await prisma.user.create({
         data: {
           email: data.email || null,
@@ -62,7 +62,7 @@ async function registerVolunteer(req, res) {
         }
       });
 
-      const volunteer = await prisma.volunteer.create({
+      await prisma.volunteer.create({
         data: {
           userId: user.id,
           skills: data.skills || [],
@@ -80,8 +80,6 @@ async function registerVolunteer(req, res) {
           notifyDigest: data.notifyDigest || false,
         }
       });
-
-      return { user, volunteer };
     });
 
     res.status(201).json({ 
@@ -108,9 +106,14 @@ async function getVolunteers(req, res) {
 
 async function getVolunteerById(req, res) {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, error: 'Неверный ID' });
+    }
+    
     const volunteer = await prisma.volunteer.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: id },
       include: { user: true }
     });
     
@@ -125,8 +128,102 @@ async function getVolunteerById(req, res) {
   }
 }
 
+async function getMyProfile(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { volunteer: true }
+    });
+
+    if (!user || !user.volunteer) {
+      return res.status(404).json({ success: false, error: 'Профиль волонтёра не найден' });
+    }
+
+    const completedTasks = await prisma.task.count({
+      where: {
+        volunteerId: user.volunteer.id,
+        status: 'completed'
+      }
+    });
+
+    const totalHours = completedTasks * 2;
+
+    const savedAnimals = await prisma.animal.count({
+      where: {
+        adoptedBy: user.id,
+        adopted: true
+      }
+    });
+
+    const profile = {
+      id: user.id,
+      name: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      city: user.city,
+      avatar: user.avatar,
+      stats: {
+        tasks: completedTasks,
+        hours: totalHours,
+        saved: savedAnimals
+      },
+      skills: user.volunteer.skills
+    };
+
+    res.json({ success: true, data: profile });
+  } catch (error) {
+    console.error('Ошибка получения профиля:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при получении профиля' });
+  }
+}
+
+async function updateMyProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const { fullName, city, avatar, phone, email } = req.body;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: fullName !== undefined ? fullName : undefined,
+        city: city !== undefined ? city : undefined,
+        avatar: avatar !== undefined ? avatar : undefined,
+        phone: phone !== undefined ? phone : undefined,
+        email: email !== undefined ? email : undefined
+      }
+    });
+
+    res.json({ success: true, message: 'Профиль обновлён' });
+  } catch (error) {
+    console.error('Ошибка обновления профиля:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при обновлении профиля' });
+  }
+}
+
+async function updateMySkills(req, res) {
+  try {
+    const userId = req.user.id;
+    const { skills } = req.body;
+
+    await prisma.volunteer.update({
+      where: { userId: userId },
+      data: { skills: skills }
+    });
+
+    res.json({ success: true, message: 'Навыки обновлены', data: { skills } });
+  } catch (error) {
+    console.error('Ошибка обновления навыков:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при обновлении навыков' });
+  }
+}
+
 module.exports = {
   registerVolunteer,
   getVolunteers,
-  getVolunteerById
+  getVolunteerById,
+  getMyProfile,
+  updateMyProfile,
+  updateMySkills
 };

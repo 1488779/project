@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../api";
+
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
 const BackIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,17 +26,45 @@ export default function AnimalCard() {
   const [animal, setAnimal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [adopting, setAdopting] = useState(false);
 
   useEffect(() => {
+    loadAnimal();
+  }, [id]);
+
+  const loadAnimal = () => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/animals/${id}`)
+    fetch(`${BASE}/api/animals/${id}`)
       .then((r) => {
         if (!r.ok) throw new Error("Животное не найдено");
         return r.json();
       })
-      .then((data) => { setAnimal(data); setLoading(false); })
-      .catch((e) => { setError(e.message); setLoading(false); });
-  }, [id]);
+      .then((data) => { 
+        setAnimal(data); 
+        setLoading(false); 
+      })
+      .catch((e) => { 
+        setError(e.message); 
+        setLoading(false); 
+      });
+  };
+
+  const handleAdopt = async () => {
+    if (!user) {
+      navigate("/login-page");
+      return;
+    }
+    
+    setAdopting(true);
+    try {
+      await api.adoptAnimal(id);
+      loadAnimal(); 
+    } catch (err) {
+      console.error("Ошибка:", err);
+    } finally {
+      setAdopting(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-[#f2f3f1] flex items-center justify-center text-[#9e9e9e]">
@@ -56,6 +87,7 @@ export default function AnimalCard() {
   const breed    = extra.breed    || "—";
   const weight   = extra.weight   || "—";
   const emoji    = extra.emoji    || "🐾";
+  const isAdopted = animal.adopted === true;
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -77,9 +109,12 @@ export default function AnimalCard() {
             {photos.length > 0 && (
               <div className="flex gap-2">
                 {photos.map((p, i) => (
-                  <div key={i} className="flex-1 aspect-square bg-[#f5f5f5] rounded-xl flex items-center justify-center text-3xl cursor-pointer hover:bg-[#e8f5e9] transition-colors">
-                    {p}
-                  </div>
+                  <img 
+                    key={i} 
+                    src={`${BASE}${p}`} 
+                    className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    alt={`Фото ${i + 1}`}
+                  />
                 ))}
               </div>
             )}
@@ -135,12 +170,19 @@ export default function AnimalCard() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => user ? null : navigate("/login-page")}
-                className="flex-1 bg-[#3a7d44] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
-              >
-                🏠 Хочу забрать домой
-              </button>
+              {isAdopted ? (
+                <div className="flex-1 bg-gray-400 text-white font-bold px-6 py-3 rounded-xl text-sm text-center">
+                  🏠 Уже усыновлено
+                </div>
+              ) : (
+                <button
+                  onClick={handleAdopt}
+                  disabled={adopting}
+                  className="flex-1 bg-[#3a7d44] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
+                >
+                  {adopting ? "Оформление..." : "🏠 Хочу забрать домой"}
+                </button>
+              )}
               <button className="flex-1 bg-white border-2 border-[#f9a825] text-[#f9a825] font-bold px-6 py-3 rounded-xl hover:bg-[#fff8e1] transition-colors text-sm">
                 💛 Помочь приюту
               </button>

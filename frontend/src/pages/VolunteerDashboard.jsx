@@ -35,33 +35,57 @@ export default function VolunteerDashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("Рекомендации");
 
-  const [tasks, setTasks]     = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [myTasks, setMyTasks] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [loadingT, setLoadingT] = useState(true);
   const [loadingA, setLoadingA] = useState(true);
 
   useEffect(() => {
     api.getTasks()
+      .then(tasks => tasks.filter(t => t.status === "open"))
       .then(setTasks)
+      .catch(err => console.error('Ошибка загрузки задач:', err))
       .finally(() => setLoadingT(false));
+    
+    api.getMyActiveTasks()
+      .then(res => setMyTasks(res.data || []))
+      .catch(err => console.error('Ошибка загрузки моих задач:', err));
+    
     api.getAnimals()
       .then(setAnimals)
+      .catch(err => console.error('Ошибка загрузки животных:', err))
       .finally(() => setLoadingA(false));
   }, []);
+
+  const getFilteredTasks = () => {
+    switch (activeFilter) {
+      case "Срочные":
+        return tasks.filter(t => t.isUrgent === true);
+      case "Мои задачи":
+        return myTasks;
+      case "Рядом":
+        // TODO: добавить фильтрацию по расстоянию, когда будет готово
+        return tasks;
+      default:
+        return tasks;
+    }
+  };
+
+  const filteredTasks = getFilteredTasks();
+  const urgentTasks = tasks.filter(t => t.isUrgent === true).slice(0, 2);
+  const recommended = filteredTasks.slice(0, 4);
+  const displayTasks = activeFilter === "Мои задачи" ? filteredTasks : recommended;
 
   const emoji = (type) => {
     const t = (type ?? "").toLowerCase();
     if (t.includes("кош") || t.includes("кот")) return "🐈";
-    return "🐕";
+    if (t.includes("собак") || t.includes("пёс")) return "🐕";
+    return "🐾";
   };
-
-  // Urgent = первые 2 задачи (нет статуса "срочная" в схеме, берём первые)
-  const urgentTasks = tasks.slice(0, 2);
-  const recommended = tasks.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
-      {/* Filter bar */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
           {FILTERS.map((f) => (
@@ -81,42 +105,45 @@ export default function VolunteerDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
-        {/* Recommended tasks */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-extrabold text-[#212121]">Рекомендовано для вас</h2>
-            <button onClick={() => navigate("/tasks-page")} className="text-sm font-bold text-[#3a7d44] hover:underline">
-              Все →
-            </button>
+            <h2 className="text-xl font-extrabold text-[#212121]">
+              {activeFilter === "Мои задачи" ? "Мои задачи" : "Рекомендовано для вас"}
+            </h2>
+            {activeFilter !== "Мои задачи" && (
+              <button onClick={() => navigate("/tasks-page")} className="text-sm font-bold text-[#3a7d44] hover:underline">
+                Все →
+              </button>
+            )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {loadingT ? <TaskSkeletons /> : recommended.length === 0 ? (
-              <p className="col-span-4 text-sm text-[#9e9e9e]">Задач пока нет</p>
-            ) : recommended.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => navigate(`/tasks/${t.id}`)}
-                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-xl bg-[#e8f5e9] flex items-center justify-center text-2xl mb-3">
-                  {ICON_MAP[t.icon] ?? "📋"}
+            {loadingT ? (
+              <TaskSkeletons />
+            ) : displayTasks.length === 0 ? (
+              <p className="col-span-4 text-sm text-[#9e9e9e]">
+                {activeFilter === "Мои задачи" ? "У вас нет активных задач" : "Задач пока нет"}
+              </p>
+            ) : (
+              displayTasks.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => navigate(`/tasks/${t.id}`)}
+                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#e8f5e9] flex items-center justify-center text-2xl mb-3">
+                    {t.icon ?? "📋"}
+                  </div>
+                  <p className="text-sm font-bold text-[#212121] mb-1 leading-snug">{t.title}</p>
+                  <p className="text-xs text-[#9e9e9e] mb-1">{t.shelter}</p>
+                  <button className="bg-[#e8f5e9] text-[#3a7d44] text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#3a7d44] hover:text-white transition-colors">
+                    {activeFilter === "Мои задачи" ? "В работе →" : "Взять →"}
+                  </button>
                 </div>
-                <p className="text-sm font-bold text-[#212121] mb-1 leading-snug">{t.title}</p>
-                <p className="text-xs text-[#9e9e9e] mb-1">{t.shelter}</p>
-                {t.distance != null && (
-                  <p className="text-xs text-[#616161] mb-3 flex items-center gap-1">
-                    <span className="text-[#e53935]">♥</span> {t.distance} км
-                  </p>
-                )}
-                <button className="bg-[#e8f5e9] text-[#3a7d44] text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#3a7d44] hover:text-white transition-colors">
-                  Взять →
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
-        {/* Animals nearby */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-extrabold text-[#212121]">Животные рядом</h2>
@@ -125,31 +152,34 @@ export default function VolunteerDashboard() {
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {loadingA ? <AnimalSkeletons /> : animals.length === 0 ? (
+            {loadingA ? (
+              <AnimalSkeletons />
+            ) : animals.length === 0 ? (
               <p className="col-span-4 text-sm text-[#9e9e9e]">Животных пока нет</p>
-            ) : animals.slice(0, 4).map((a) => {
-              const extra = a.extraData ?? {};
-              return (
-                <div
-                  key={a.id}
-                  onClick={() => navigate(`/animals/${a.id}`)}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
-                >
-                  <div className="w-full h-32 bg-[#f5f5f5] flex items-center justify-center text-5xl">
-                    {extra.emoji ?? emoji(a.type)}
+            ) : (
+              animals.slice(0, 4).map((a) => {
+                const extra = a.extraData ?? {};
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => navigate(`/animals/${a.id}`)}
+                    className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                  >
+                    <div className="w-full h-32 bg-[#f5f5f5] flex items-center justify-center text-5xl">
+                      {extra.emoji ?? emoji(a.type)}
+                    </div>
+                    <div className="px-4 py-3">
+                      <p className="text-sm font-extrabold text-[#212121]">{a.name}</p>
+                      <p className="text-xs text-[#9e9e9e]">{a.age}</p>
+                    </div>
                   </div>
-                  <div className="px-4 py-3">
-                    <p className="text-sm font-extrabold text-[#212121]">{a.name}</p>
-                    <p className="text-xs text-[#9e9e9e]">{a.age}</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </section>
 
-        {/* Urgent tasks */}
-        {urgentTasks.length > 0 && (
+        {activeFilter !== "Мои задачи" && urgentTasks.length > 0 && (
           <section>
             <h2 className="text-xl font-extrabold text-[#212121] mb-4">Срочные задачи</h2>
             <div className="flex flex-col gap-3">

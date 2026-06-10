@@ -56,6 +56,7 @@ export default function VolunteerRegister3() {
       ...step2,
       ...form,
       password,
+      skills: [...(step1.skills || []), ...(step2.skills || [])]
     };
 
     try {

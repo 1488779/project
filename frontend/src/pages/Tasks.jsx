@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+
 const CATEGORIES = ["Все категории", "Перевозка", "Выгул", "Ремонт", "Уборка"];
 const DISTANCES  = ["Любая дистанция", "До 3 км", "До 5 км", "До 10 км"];
 

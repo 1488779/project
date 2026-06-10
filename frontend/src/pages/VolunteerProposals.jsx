@@ -7,7 +7,7 @@ const TABS = ["Все", "На рассмотрении", "Одобрены", "О
 
 const STATUS_META = {
   pending:  { emoji: "🟡", text: "На рассмотрении", textColor: "text-[#f57c00]", bg: "bg-[#fff3e0]" },
-  approved: { emoji: "✅", text: "Одобрена (опубликована как задача)", textColor: "text-[#2e7d32]", bg: "bg-[#e8f5e9]" },
+  approved: { emoji: "✅", text: "Одобрена", textColor: "text-[#2e7d32]", bg: "bg-[#e8f5e9]" },
   rejected: { emoji: "❌", text: "Отклонена", textColor: "text-[#c62828]", bg: "bg-[#ffebee]" },
 };
 
@@ -43,13 +43,8 @@ export default function VolunteerProposals() {
     try {
       setLoading(true);
       setError(null);
-      // Загружаем задачи, предложенные волонтёром (все статусы)
-      const data = await api.getAllTasksAdmin();
-      // Фильтруем по volunteerId если есть в данных
-      const mine = user?.volunteerId
-        ? data.filter((t) => t.volunteerId === user.volunteerId)
-        : data;
-      setProposals(mine);
+      const data = await api.getMyCreatedTasks();
+      setProposals(data);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -78,7 +73,7 @@ export default function VolunteerProposals() {
         title: form.title,
         category: form.category || "Другое",
         description: form.description,
-        volunteerId: user?.volunteerId,
+        createdById: user?.id,
       });
       setProposals((prev) => [newTask, ...prev]);
       setShowForm(false);

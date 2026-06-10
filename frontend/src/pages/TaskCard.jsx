@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../api";
+
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
 const BackIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,10 +25,11 @@ export default function TaskCard() {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [taking, setTaking] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/tasks/${id}`)
+    fetch(`${BASE}/api/tasks/${id}`)
       .then((r) => {
         if (!r.ok) throw new Error("Задача не найдена");
         return r.json();
@@ -33,6 +37,20 @@ export default function TaskCard() {
       .then((data) => { setTask(data); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
   }, [id]);
+
+  const takeTask = async () => {
+  if (!user) return;
+  setTaking(true);
+  try {
+    await api.takeTask(id, user.id);
+    alert("Задача взята в работу");
+    navigate("/dashboard/volunteer");
+  } catch (err) {
+    alert("Ошибка: " + err.message);
+  } finally {
+    setTaking(false);
+  }
+};
 
   if (loading) return (
     <div className="min-h-screen bg-[#f2f3f1] flex items-center justify-center text-[#9e9e9e]">
@@ -59,6 +77,8 @@ export default function TaskCard() {
   const skills        = extra.skills        || [];
   const photos        = extra.photos        || [];
   const contact       = extra.contact       || null;
+  const isActive = task.status === 'active';
+  const isCompleted = task.status === 'completed';
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -80,9 +100,12 @@ export default function TaskCard() {
             {photos.length > 0 && (
               <div className="flex gap-2 mb-6">
                 {photos.map((p, i) => (
-                  <div key={i} className="w-20 h-20 bg-[#f5f5f5] rounded-xl flex items-center justify-center text-2xl cursor-pointer hover:bg-[#e8f5e9] transition-colors">
-                    {p}
-                  </div>
+                  <img 
+                    key={i} 
+                    src={`${BASE}${p}`} 
+                    className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    alt={`Фото ${i + 1}`}
+                  />
                 ))}
               </div>
             )}
@@ -118,16 +141,19 @@ export default function TaskCard() {
                 </div>
               </div>
 
+              {isActive && (
+                <div className="bg-blue-100 text-blue-700 text-sm font-bold px-3 py-1 rounded-full mb-4 text-center">
+                  В работе
+                </div>
+              )}
+
+              {isCompleted && (
+                <div className="bg-green-100 text-green-700 text-sm font-bold px-3 py-1 rounded-full mb-4 text-center">
+                  Выполнена
+                </div>
+              )}
+
               <div className="space-y-3 mb-4">
-                {task.distance != null && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-[#e53935] mt-0.5">📍</span>
-                    <div>
-                      <p className="text-xs text-[#9e9e9e]">Расстояние</p>
-                      <p className="text-sm font-bold text-[#212121]">{task.distance} км от вас</p>
-                    </div>
-                  </div>
-                )}
                 {date !== "—" && (
                   <div className="flex items-start gap-2">
                     <span className="mt-0.5">📅</span>
@@ -157,12 +183,33 @@ export default function TaskCard() {
                 🗺️ Мини-карта
               </div>
 
-              <button
-                onClick={() => user ? null : navigate("/login-page")}
-                className="w-full bg-[#3a7d44] text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
-              >
-                Взять задачу
-              </button>
+              {!isActive && !isCompleted && (
+                <button
+                  onClick={takeTask}
+                  disabled={taking}
+                  className="w-full bg-[#3a7d44] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
+                >
+                  {taking ? "Оформление..." : "Взять задачу"}
+                </button>
+              )}
+
+              {isActive && (
+                <button
+                  disabled
+                  className="w-full bg-gray-400 text-white font-bold py-3 rounded-xl text-sm cursor-not-allowed"
+                >
+                  Задача в работе
+                </button>
+              )}
+
+              {isCompleted && (
+                <button
+                  disabled
+                  className="w-full bg-gray-400 text-white font-bold py-3 rounded-xl text-sm cursor-not-allowed"
+                >
+                  Задача выполнена
+                </button>
+              )}
             </div>
 
             {contact && (

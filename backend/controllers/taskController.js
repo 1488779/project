@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const { createNotification } = require('./notificationController');
 const prisma = new PrismaClient();
-
 
 const getIconByCategory = (category) => {
   const icons = {
@@ -79,8 +79,13 @@ const getAllTasks = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Неверный ID задачи' });
+    }
+    
     const task = await prisma.task.findUnique({ 
-      where: { id },
+      where: { id: id },
       include: { shelter: true }
     });
     
@@ -137,7 +142,10 @@ const approveTask = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
@@ -146,6 +154,14 @@ const approveTask = async (req, res) => {
       where: { id },
       data: { moderationStatus: 'approved' }
     });
+
+    await createNotification(
+      existingTask.createdById,
+      'Задача одобрена',
+      `Ваша задача "${task.title}" прошла модерацию и опубликована`,
+      'task_approved',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача одобрена', task });
   } catch (error) {
@@ -159,17 +175,26 @@ const rejectTask = async (req, res) => {
     const id = parseInt(req.params.id);
     const { reason } = req.body;
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
     
     const task = await prisma.task.update({
       where: { id },
-      data: { 
-        moderationStatus: 'rejected'
-      }
+      data: { moderationStatus: 'rejected' }
     });
+
+    await createNotification(
+      existingTask.createdById,
+      'Задача отклонена',
+      `Ваша задача "${task.title}" не прошла модерацию${reason ? `: ${reason}` : ''}`,
+      'task_rejected',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача отклонена', task, reason: reason || null });
   } catch (error) {
@@ -282,18 +307,42 @@ const takeTask = async (req, res) => {
     const id = parseInt(req.params.id);
     const { volunteerId } = req.body;
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
+    
+    const volunteer = await prisma.volunteer.findUnique({
+      where: { id: volunteerId },
+      include: { user: true }
+    });
     
     const task = await prisma.task.update({
       where: { id },
       data: {
         volunteerId: volunteerId,
-        status: 'in_progress'
+        status: 'active'
       }
     });
+
+    await createNotification(
+      volunteer.userId,
+      'Вам назначена задача',
+      `Куратор назначил вам задачу "${task.title}"`,
+      'task_assigned',
+      `/tasks/${task.id}`
+    );
+
+    await createNotification(
+      existingTask.createdById,
+      'Волонтёр взял задачу',
+      `Волонтёр ${volunteer.user.fullName || 'Волонтёр'} взял задачу "${task.title}"`,
+      'task_taken',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача взята в работу', task });
   } catch (error) {
@@ -304,25 +353,172 @@ const takeTask = async (req, res) => {
 
 const completeTask = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const userId = req.user.id;
+    const taskId = parseInt(req.params.id || req.params.taskId);
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
-    if (!existingTask) {
-      return res.status(404).json({ error: 'Задача не найдена' });
+    const volunteer = await prisma.volunteer.findUnique({
+      where: { userId: userId },
+      include: { user: true }
+    });
+
+    if (!volunteer) {
+      return res.status(404).json({ success: false, error: 'Волонтёр не найден' });
     }
-    
-    const task = await prisma.task.update({
-      where: { id },
-      data: { status: 'done' }
+
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        volunteerId: volunteer.id
+      }
+    });
+
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Задача не найдена' });
+    }
+
+    if (task.status === 'completed') {
+      return res.status(400).json({ success: false, error: 'Задача уже завершена' });
+    }
+
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { status: 'completed' }
     });
     
-    res.json({ message: 'Задача выполнена', task });
+    await createNotification(
+      task.createdById,
+      'Задача выполнена',
+      `Волонтёр ${volunteer.user.fullName || 'Волонтёр'} завершил задачу "${task.title}"`,
+      'task_completed',
+      `/tasks/${task.id}`
+    );
+
+    res.json({ success: true, message: 'Задача завершена' });
   } catch (error) {
-    console.error('Ошибка PUT /api/tasks/:id/complete:', error);
-    res.status(500).json({ error: 'Ошибка' });
+    console.error('Ошибка завершения задачи:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при завершении задачи' });
   }
 };
 
+const getMyActiveTasks = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const volunteer = await prisma.volunteer.findUnique({
+      where: { userId: userId }
+    });
+
+    if (!volunteer) {
+      return res.status(404).json({ success: false, error: 'Волонтёр не найден' });
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        volunteerId: volunteer.id,
+        status: 'active'
+      },
+      include: { shelter: true },
+      orderBy: { isUrgent: 'desc' }
+    });
+
+    const formattedTasks = tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      shelter: task.shelter?.orgName || 'Приют',
+      datetime: task.date ? (task.timeFrom ? `${task.date}, ${task.timeFrom}` : task.date) : null,
+      status: 'В работе',
+      contactName: task.contactName,
+      contactPhone: task.contactPhone
+    }));
+
+    res.json({ success: true, data: formattedTasks });
+  } catch (error) {
+    console.error('Ошибка получения активных задач:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при получении задач' });
+  }
+};
+
+const getMyTaskHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const volunteer = await prisma.volunteer.findUnique({
+      where: { userId: userId }
+    });
+
+    if (!volunteer) {
+      return res.status(404).json({ success: false, error: 'Волонтёр не найден' });
+    }
+
+    const completedTasks = await prisma.task.findMany({
+      where: {
+        volunteerId: volunteer.id,
+        status: 'completed'
+      },
+      include: { shelter: true },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    const history = completedTasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      shelter: task.shelter?.orgName || 'Приют',
+      date: task.updatedAt.toISOString().split('T')[0]
+    }));
+
+    res.json({ success: true, data: history });
+  } catch (error) {
+    console.error('Ошибка получения истории:', error);
+    res.status(500).json({ success: false, error: 'Ошибка при получении истории' });
+  }
+};
+
+const getMyCreatedTasks = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Не авторизован' });
+    }
+    
+    const tasks = await prisma.task.findMany({
+      where: { createdById: userId },
+      include: { shelter: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    const transformed = tasks.map(transformTask);
+    res.json(transformed);
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getShelterTasks = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const curator = await prisma.curator.findUnique({
+      where: { userId: userId }
+    });
+    
+    if (!curator) {
+      return res.status(403).json({ error: 'Вы не куратор' });
+    }
+    
+    const tasks = await prisma.task.findMany({
+      where: { shelterId: curator.shelterId },
+      include: { shelter: true, volunteer: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    const transformed = tasks.map(transformTask);
+    res.json(transformed);
+  } catch (error) {
+    console.error('Ошибка получения задач приюта:', error);
+    res.status(500).json({ error: 'Ошибка получения списка' });
+  }
+};
 
 module.exports = {
   getAllTasks,
@@ -335,5 +531,9 @@ module.exports = {
   updateTask,
   deleteTask,
   takeTask,
-  completeTask
+  completeTask,
+  getMyActiveTasks,
+  getMyTaskHistory,
+  getMyCreatedTasks,
+  getShelterTasks
 };

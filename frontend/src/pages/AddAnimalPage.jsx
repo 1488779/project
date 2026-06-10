@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../api";
 
 const SPECIES = ["Собака", "Кошка", "Кролик", "Птица", "Другое"];
 
@@ -26,22 +27,6 @@ export default function AddAnimalPage() {
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("http://localhost:5000/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error);
-    }
-    return data.url;
-  };
-
   const handleSubmit = async () => {
     if (!form.name.trim()) {
       setError("Введите кличку");
@@ -58,7 +43,8 @@ export default function AddAnimalPage() {
     try {
       let photoUrl = null;
       if (form.photo) {
-        photoUrl = await uploadFile(form.photo);
+        const uploadResult = await api.uploadFile(form.photo);
+        photoUrl = uploadResult.url;
       }
 
       const animalData = {
@@ -75,25 +61,14 @@ export default function AddAnimalPage() {
         specialConditions: form.conditions || null,
         photos: photoUrl ? [photoUrl] : [],
         createdById: user?.id || null,
-        shelterId: null  
+        shelterId: user?.shelterId || null
       };
 
-      const response = await fetch("http://localhost:5000/api/animals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(animalData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubmitted(true);
-      } else {
-        setError(data.error || "Ошибка при создании анкеты");
-      }
+      await api.createAnimal(animalData);
+      setSubmitted(true);
     } catch (err) {
       console.error("Ошибка:", err);
-      setError("Ошибка соединения с сервером");
+      setError(err.message || "Ошибка при создании анкеты");
     } finally {
       setLoading(false);
     }
