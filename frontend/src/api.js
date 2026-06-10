@@ -39,6 +39,7 @@ export const api = {
   approveAnimal: (id) => request(`/api/animals/${id}/approve`, { method: "PUT" }),
   rejectAnimal: (id) => request(`/api/animals/${id}/reject`, { method: "PUT" }),
   getSimilarAnimals: (id) => request(`/api/animals/similar/${id}`),
+  adoptAnimal: (id) => request(`/api/animals/${id}/adopt`, { method: "PUT" }),
 
   //TASKS
   getTasks: () => request("/api/tasks"),
@@ -79,6 +80,19 @@ export const api = {
 
   //SHELTERS
   getShelters: () => request("/api/shelters"),
+
+  // FOSTER
+  createFosterRequest: (data) => request("/api/foster-requests", { method: "POST", body: JSON.stringify(data) }),
+  getOwnerFosterRequests: () => request("/api/foster-requests/owner"),
+  getVolunteerFosterRequests: () => request("/api/foster-requests/volunteer"),
+  getFosterRequestById: (id) => request(`/api/foster-requests/${id}`),
+  updateFosterRequestStatus: (id, status) => request(`/api/foster-requests/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+
+  // NOTIFICATIONS
+  getNotifications: () => request("/api/notifications"),
+  markNotificationAsRead: (id) => request(`/api/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsAsRead: () => request("/api/notifications/read-all", { method: "PATCH" }),
+  deleteNotification: (id) => request(`/api/notifications/${id}`, { method: "DELETE" }),
 
   //UPLOAD
   uploadFile: (file) => {

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const ANIMAL_TYPES = ["Собака", "Кошка", "Кролик", "Птица", "Другое"];
 const DISTRICTS    = ["Центральный", "Юго-Западный", "Северный", "Ленинский", "Октябрьский"];
@@ -11,10 +11,33 @@ const StarIcon = () => (
   </svg>
 );
 
-function VolunteerCard({ vol }) {
+function VolunteerCard({ vol, onSendRequest, isSending, isSendingForThis, isSent }) {
   const user = vol.user ?? {};
   const name = user.fullName ?? `Волонтёр #${vol.id}`;
   const available = vol.availableTime ?? (vol.maxFosterDays ? `До ${vol.maxFosterDays} дней передержки` : "Уточните у волонтёра");
+
+  if (isSent) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 opacity-70">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium shrink-0">
+            {name[0]}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">{name}</p>
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+              {user.city && <>{user.city} · </>}
+              <StarIcon /> {vol.extraData?.rating ?? "—"}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{available}</p>
+          </div>
+        </div>
+        <div className="shrink-0 bg-green-100 text-green-700 text-sm font-medium px-4 py-2 rounded-xl">
+          ✓ Заявка отправлена
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
@@ -31,8 +54,16 @@ function VolunteerCard({ vol }) {
           <p className="text-xs text-gray-400 mt-0.5">{available}</p>
         </div>
       </div>
-      <button className="shrink-0 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
-        Отправить заявку
+      <button 
+        onClick={() => onSendRequest(vol)}
+        disabled={isSending && isSendingForThis}
+        className={`shrink-0 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
+          isSending && isSendingForThis 
+            ? "bg-gray-400 cursor-not-allowed" 
+            : "bg-green-700 hover:bg-green-800"
+        }`}
+      >
+        {isSending && isSendingForThis ? "Отправка..." : "Отправить заявку"}
       </button>
     </div>
   );
@@ -52,7 +83,7 @@ function SkeletonVol() {
 }
 
 export default function OwnerDashboard() {
-  const navigate   = useNavigate();
+  const { user } = useAuth();
   const [animalType, setAnimalType] = useState("Собака");
   const [days, setDays]             = useState("14");
   const [needsMeds, setNeedsMeds]   = useState(false);
@@ -62,6 +93,10 @@ export default function OwnerDashboard() {
   const [volunteers, setVolunteers] = useState([]);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState(null);
+  
+  const [sending, setSending]       = useState(false);
+  const [sendingId, setSendingId]   = useState(null);
+  const [sentIds, setSentIds]       = useState([]);
 
   const handleSearch = () => {
     setSearched(true);
@@ -69,10 +104,10 @@ export default function OwnerDashboard() {
     setError(null);
     api.getVolunteers()
       .then((data) => {
-        // Фильтруем: у кого considersFoster=true и (если задан район) districts includes
-        const filtered = (data?.data ?? data ?? []).filter((v) => {
+        const volunteersList = data?.data ?? data ?? [];
+        const filtered = volunteersList.filter((v) => {
           if (!v.considersFoster) return false;
-          if (needsMeds && !v.skills?.includes("Медицина")) return false;
+          if (needsMeds && !v.skills?.includes("Ветеринария")) return false;
           if (district && v.districts?.length > 0 && !v.districts.includes(district)) return false;
           return true;
         });
@@ -82,12 +117,38 @@ export default function OwnerDashboard() {
       .finally(() => setLoading(false));
   };
 
+  const handleSendRequest = async (volunteer) => {
+  if (!user) return;
+  
+  if (sending) return;
+  if (sentIds.includes(volunteer.id)) return;
+  
+  setSending(true);
+  setSendingId(volunteer.id);
+  
+  try {
+    await api.createFosterRequest({
+      animalType: animalType,
+      days: parseInt(days),
+      needsMeds: needsMeds,
+      volunteerId: volunteer.id,
+      message: `Заявка на передержку ${animalType} на ${days} дней`
+    });
+    
+    setSentIds((prev) => [...prev, volunteer.id]);
+  } catch (err) {
+    console.error("Ошибка:", err);
+  } finally {
+    setSending(false);
+    setSendingId(null);
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Поиск передержки для питомца</h1>
 
-        {/* Search form */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -141,7 +202,6 @@ export default function OwnerDashboard() {
           </button>
         </div>
 
-        {/* Results */}
         {searched && (
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-3">
@@ -153,7 +213,16 @@ export default function OwnerDashboard() {
                 ? Array.from({ length: 3 }).map((_, i) => <SkeletonVol key={i} />)
                 : volunteers.length === 0
                   ? <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400 text-sm">Волонтёров по этим параметрам не найдено</div>
-                  : volunteers.map((vol) => <VolunteerCard key={vol.id} vol={vol} />)
+                  : volunteers.map((vol) => (
+                      <VolunteerCard 
+                        key={vol.id} 
+                        vol={vol} 
+                        onSendRequest={handleSendRequest}
+                        isSending={sending}
+                        isSendingForThis={sendingId === vol.id}
+                        isSent={sentIds.includes(vol.id)}
+                      />
+                    ))
               }
             </div>
           </div>

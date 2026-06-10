@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { createNotification } = require('./notificationController');
 const prisma = new PrismaClient();
 
 const getIconByCategory = (category) => {
@@ -141,7 +142,10 @@ const approveTask = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
@@ -150,6 +154,14 @@ const approveTask = async (req, res) => {
       where: { id },
       data: { moderationStatus: 'approved' }
     });
+
+    await createNotification(
+      existingTask.createdById,
+      'Задача одобрена',
+      `Ваша задача "${task.title}" прошла модерацию и опубликована`,
+      'task_approved',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача одобрена', task });
   } catch (error) {
@@ -163,17 +175,26 @@ const rejectTask = async (req, res) => {
     const id = parseInt(req.params.id);
     const { reason } = req.body;
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
     
     const task = await prisma.task.update({
       where: { id },
-      data: { 
-        moderationStatus: 'rejected'
-      }
+      data: { moderationStatus: 'rejected' }
     });
+
+    await createNotification(
+      existingTask.createdById,
+      'Задача отклонена',
+      `Ваша задача "${task.title}" не прошла модерацию${reason ? `: ${reason}` : ''}`,
+      'task_rejected',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача отклонена', task, reason: reason || null });
   } catch (error) {
@@ -286,10 +307,18 @@ const takeTask = async (req, res) => {
     const id = parseInt(req.params.id);
     const { volunteerId } = req.body;
     
-    const existingTask = await prisma.task.findUnique({ where: { id } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id },
+      include: { createdBy: true }
+    });
     if (!existingTask) {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
+    
+    const volunteer = await prisma.volunteer.findUnique({
+      where: { id: volunteerId },
+      include: { user: true }
+    });
     
     const task = await prisma.task.update({
       where: { id },
@@ -298,6 +327,22 @@ const takeTask = async (req, res) => {
         status: 'active'
       }
     });
+
+    await createNotification(
+      volunteer.userId,
+      'Вам назначена задача',
+      `Куратор назначил вам задачу "${task.title}"`,
+      'task_assigned',
+      `/tasks/${task.id}`
+    );
+
+    await createNotification(
+      existingTask.createdById,
+      'Волонтёр взял задачу',
+      `Волонтёр ${volunteer.user.fullName || 'Волонтёр'} взял задачу "${task.title}"`,
+      'task_taken',
+      `/tasks/${task.id}`
+    );
     
     res.json({ message: 'Задача взята в работу', task });
   } catch (error) {
@@ -312,7 +357,8 @@ const completeTask = async (req, res) => {
     const taskId = parseInt(req.params.id || req.params.taskId);
     
     const volunteer = await prisma.volunteer.findUnique({
-      where: { userId: userId }
+      where: { userId: userId },
+      include: { user: true }
     });
 
     if (!volunteer) {
@@ -338,6 +384,14 @@ const completeTask = async (req, res) => {
       where: { id: taskId },
       data: { status: 'completed' }
     });
+    
+    await createNotification(
+      task.createdById,
+      'Задача выполнена',
+      `Волонтёр ${volunteer.user.fullName || 'Волонтёр'} завершил задачу "${task.title}"`,
+      'task_completed',
+      `/tasks/${task.id}`
+    );
 
     res.json({ success: true, message: 'Задача завершена' });
   } catch (error) {

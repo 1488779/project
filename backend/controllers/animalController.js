@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { createNotification } = require('./notificationController');
 const prisma = new PrismaClient();
 
 const transformAnimal = (animal) => {
@@ -16,6 +17,7 @@ const transformAnimal = (animal) => {
     moderationStatus: animal.moderationStatus,
     createdAt: animal.createdAt,
     updatedAt: animal.updatedAt,
+    adopted: animal.adopted,  
 
     extraData: {
       breed: animal.breed,
@@ -200,8 +202,18 @@ const approveAnimal = async (req, res) => {
       where: { id },
       data: { moderationStatus: 'approved' }
     });
+    
+    await createNotification(
+      animal.createdById,
+      'Животное одобрено',
+      `Ваша анкета "${animal.name}" прошла модерацию и опубликована`,
+      'animal_approved',
+      `/animals/${animal.id}`
+    );
+    
     res.json({ message: 'Животное одобрено', animal });
   } catch (error) {
+    console.error('Ошибка одобрения:', error);
     res.status(500).json({ error: 'Ошибка одобрения' });
   }
 };
@@ -209,12 +221,23 @@ const approveAnimal = async (req, res) => {
 const rejectAnimal = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const { reason } = req.body;
     const animal = await prisma.animal.update({
       where: { id },
       data: { moderationStatus: 'rejected' }
     });
-    res.json({ message: 'Животное отклонено', animal });
+    
+    await createNotification(
+      animal.createdById,
+      'Животное отклонено',
+      `Ваша анкета "${animal.name}" не прошла модерацию${reason ? `: ${reason}` : ''}`,
+      'animal_rejected',
+      `/animals/${animal.id}`
+    );
+    
+    res.json({ message: 'Животное отклонено', animal, reason: reason || null });
   } catch (error) {
+    console.error('Ошибка отклонения:', error);
     res.status(500).json({ error: 'Ошибка отклонения' });
   }
 };
@@ -242,6 +265,56 @@ const getSimilarAnimals = async (req, res) => {
   }
 };
 
+const adoptAnimal = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user.id;
+    
+    const animal = await prisma.animal.findUnique({
+      where: { id },
+      include: { 
+        shelter: { 
+          include: { curators: { include: { user: true } } }
+        }
+      }
+    });
+    
+    if (!animal) {
+      return res.status(404).json({ error: 'Животное не найдено' });
+    }
+    
+    if (animal.adopted) {
+      return res.status(400).json({ error: 'Животное уже усыновлено' });
+    }
+    
+    const updated = await prisma.animal.update({
+      where: { id },
+      data: {
+        adopted: true,
+        adoptedAt: new Date(),
+        adoptedBy: userId
+      }
+    });
+
+    if (animal.shelter?.curators?.length > 0) {
+      for (const curator of animal.shelter.curators) {
+        await createNotification(
+          curator.userId,
+          'Животное обрело дом',
+          `Питомец "${animal.name}" был усыновлён`,
+          'animal_adopted',
+          `/animals/${animal.id}`
+        );
+      }
+    }
+    
+    res.json({ success: true, message: 'Животное усыновлено', data: updated });
+  } catch (error) {
+    console.error('Ошибка усыновления:', error);
+    res.status(500).json({ error: 'Ошибка усыновления' });
+  }
+};
+
 module.exports = {
   getAllAnimals,
   getAllAnimalsAdmin,
@@ -252,5 +325,6 @@ module.exports = {
   getAnimalsByModerationStatus,
   approveAnimal,
   rejectAnimal,
-  getSimilarAnimals
+  getSimilarAnimals,
+  adoptAnimal
 };
