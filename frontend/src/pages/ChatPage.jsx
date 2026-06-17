@@ -158,7 +158,6 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Chat area */}
           <div className="flex-1 flex flex-col min-w-0">
             {selectedChat ? (
               <>

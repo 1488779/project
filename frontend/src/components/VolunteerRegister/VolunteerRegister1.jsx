@@ -114,7 +114,6 @@ export default function VolunteerRegister() {
           Регистрация волонтера. Шаг 1 из 3
         </h1>
 
-        {/* ФИО */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             ФИО <span className="text-red-500">*</span>
@@ -128,7 +127,6 @@ export default function VolunteerRegister() {
           />
         </div>
 
-        {/* Телефон */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Телефон <span className="text-red-500">*</span>
@@ -142,7 +140,6 @@ export default function VolunteerRegister() {
           />
         </div>
 
-        {/* Email */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
@@ -154,7 +151,6 @@ export default function VolunteerRegister() {
           />
         </div>
 
-        {/* Город */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Город <span className="text-red-500">*</span>
@@ -173,7 +169,6 @@ export default function VolunteerRegister() {
           </div>
         </div>
 
-        {/* Фото профиля */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
           <div
@@ -201,7 +196,6 @@ export default function VolunteerRegister() {
           />
         </div>
 
-        {/* Компетенции */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">Мои компетенции</label>
           <div className="flex flex-wrap gap-2">
@@ -222,7 +216,6 @@ export default function VolunteerRegister() {
           </div>
         </div>
 
-        {/* Опыт */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Опыт и предпочтения</label>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
@@ -235,7 +228,6 @@ export default function VolunteerRegister() {
           </label>
         </div>
 
-        {/* Предпочитаемые животные */}
         <div className="mb-4">
           <p className="text-sm text-gray-700 mb-2">Предпочитаемые животные</p>
           <div className="flex flex-wrap gap-2">
@@ -256,7 +248,6 @@ export default function VolunteerRegister() {
           </div>
         </div>
 
-        {/* Передержка */}
         <div className="mb-6">
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer mb-3">
             <input
@@ -296,7 +287,6 @@ export default function VolunteerRegister() {
           )}
         </div>
 
-        {/* Кнопка */}
         <button
           onClick={handleNext}
           disabled={loading}

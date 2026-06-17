@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 export default function CuratorRegister() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    fullName: "",
     emailOrPhone: "",
     password: "",
     confirmPassword: "",
@@ -19,6 +20,11 @@ export default function CuratorRegister() {
   const handleNext = async () => {
     setError("");
     
+    if (!form.fullName.trim()) {
+      setError("Введите ваше имя");
+      return;
+    }
+
     if (!form.emailOrPhone.trim()) {
       setError("Введите email или номер телефона");
       return;
@@ -42,10 +48,12 @@ export default function CuratorRegister() {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/curator/create-account', {
+      const BASE = import.meta.env.VITE_API_URL ?? "";
+      const response = await fetch(`${BASE}/api/curator/create-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          fullName: form.fullName.trim(),
           emailOrPhone: form.emailOrPhone.trim(),
           password: form.password,
           confirmPassword: form.confirmPassword,
@@ -71,7 +79,6 @@ export default function CuratorRegister() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 px-4">
       <div className="bg-white rounded-2xl shadow-md w-full max-w-xl p-8">
-        {/* Прогресс */}
         <div className="flex gap-2 mb-6">
           <div className="h-1 flex-1 bg-green-600 rounded-full" />
           <div className="h-1 flex-1 bg-gray-200 rounded-full" />
@@ -81,14 +88,25 @@ export default function CuratorRegister() {
           Регистрация куратора (сотрудник приюта)
         </h1>
 
-        {/* Ошибка */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Email или телефон */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Имя и фамилия <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Иван Иванов"
+            value={form.fullName}
+            onChange={(e) => handleChange("fullName", e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500"
+          />
+        </div>
+
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email или телефон <span className="text-red-500">*</span>
@@ -102,7 +120,6 @@ export default function CuratorRegister() {
           />
         </div>
 
-        {/* Пароль */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Пароль <span className="text-red-500">*</span>
@@ -116,7 +133,6 @@ export default function CuratorRegister() {
           />
         </div>
 
-        {/* Подтверждение пароля */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Подтверждение пароля <span className="text-red-500">*</span>
@@ -137,7 +153,6 @@ export default function CuratorRegister() {
           )}
         </div>
 
-        {/* Кнопка вместо Link */}
         <button
           onClick={handleNext}
           disabled={loading}

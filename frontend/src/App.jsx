@@ -4,8 +4,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Layout
 import Footer from "./components/layout/Footer";
-import Header from "./components/layout/Header";         // публичный
-import HeaderAuth from "./components/layout/HeaderAuth"; // для всех авторизованных
+import Header from "./components/layout/Header";        
+import HeaderAuth from "./components/layout/HeaderAuth"; 
 
 // Публичные страницы
 import Home from "./pages/Home";
@@ -72,7 +72,7 @@ function AppContent() {
       <SmartHeader />
       <div className="flex-1 flex flex-col">
       <Routes>
-        {/* Публичные */}
+
         <Route path="/"               element={<Home />} />
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/login-page"     element={<LoginPage />} />
@@ -82,7 +82,6 @@ function AppContent() {
         <Route path="/shelters-page"  element={<SheltersPage />} />
         <Route path="/about-project"  element={<AboutProject />} />
 
-        {/* Регистрация */}
         <Route path="/register/volunteer"   element={<VolunteerRegister />} />
         <Route path="/volunteer-register-2" element={<VolunteerRegister2 />} />
         <Route path="/volunteer-register-3" element={<VolunteerRegister3 />} />
@@ -90,10 +89,8 @@ function AppContent() {
         <Route path="/curator-register-2"   element={<CuratorRegister2 />} />
         <Route path="/register/owner"       element={<OwnerRegister />} />
 
-        {/* Dashboard-роутер */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
 
-        {/* Защищённые дашборды */}
         <Route path="/dashboard/volunteer" element={
           <PrivateRoute allowedRoles={["volunteer"]}><VolunteerDashboard /></PrivateRoute>
         }/>
@@ -107,7 +104,6 @@ function AppContent() {
           <PrivateRoute><VolunteerProfile /></PrivateRoute>
         }/>
 
-        {/* Публичные детальные страницы */}
         <Route path="/animals/:id"  element={<AnimalCard />} />
         <Route path="/animals/card" element={<AnimalCard />} />
         <Route path="/tasks/:id"    element={<TaskCard />} />

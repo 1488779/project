@@ -38,6 +38,7 @@ export default function VolunteerDashboard() {
   const [tasks, setTasks] = useState([]);
   const [myTasks, setMyTasks] = useState([]);
   const [animals, setAnimals] = useState([]);
+  const [fosterRequests, setFosterRequests] = useState([]);
   const [loadingT, setLoadingT] = useState(true);
   const [loadingA, setLoadingA] = useState(true);
 
@@ -54,11 +55,24 @@ export default function VolunteerDashboard() {
       .then(res => setMyTasks(res.data || []))
       .catch(err => console.error('Ошибка загрузки моих задач:', err));
     
+    api.getVolunteerFosterRequests()
+      .then(res => setFosterRequests(res.data || []))
+      .catch(err => console.error('Ошибка загрузки заявок на передержку:', err));
+
     api.getAnimals()
       .then(setAnimals)
       .catch(err => console.error('Ошибка загрузки животных:', err))
       .finally(() => setLoadingA(false));
   }, []);
+
+  const handleFosterRequest = async (id, status) => {
+    try {
+      await api.updateFosterRequestStatus(id, status);
+      setFosterRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch (e) {
+      alert("Ошибка: " + e.message);
+    }
+  };
 
   const getFilteredTasks = () => {
     switch (activeFilter) {
@@ -218,6 +232,49 @@ export default function VolunteerDashboard() {
             </div>
           </section>
         )}
+        {fosterRequests.filter(r => r.status === "open").length > 0 && (
+          <section>
+            <h2 className="text-xl font-extrabold text-[#212121] mb-4">
+              Входящие заявки на передержку
+              <span className="ml-2 text-sm font-bold bg-[#3a7d44] text-white px-2 py-0.5 rounded-full">
+                {fosterRequests.filter(r => r.status === "open").length}
+              </span>
+            </h2>
+            <div className="flex flex-col gap-3">
+              {fosterRequests.filter(r => r.status === "open").map((r) => (
+                <div key={r.id} className="bg-white rounded-2xl px-6 py-5 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#212121] mb-0.5">
+                      {r.animalType ?? "Животное"} · {r.days} дн.
+                      {r.needsMeds && <span className="ml-2 text-xs text-[#f57c00] font-bold">💊 Нужны лекарства</span>}
+                    </p>
+                    <p className="text-xs text-[#9e9e9e]">
+                      Владелец: {r.owner?.user?.fullName ?? "—"}
+                    </p>
+                    {r.message && (
+                      <p className="text-xs text-[#616161] mt-1">{r.message}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleFosterRequest(r.id, "rejected")}
+                      className="px-4 py-2 rounded-xl border border-gray-200 text-[#e53935] text-sm font-bold hover:bg-[#ffebee] transition-colors"
+                    >
+                      Отклонить
+                    </button>
+                    <button
+                      onClick={() => handleFosterRequest(r.id, "in_progress")}
+                      className="px-4 py-2 rounded-xl bg-[#3a7d44] text-white text-sm font-bold hover:bg-[#5a9e66] transition-colors"
+                    >
+                      Принять
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
       </div>
     </div>
   );

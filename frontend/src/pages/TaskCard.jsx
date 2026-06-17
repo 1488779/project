@@ -143,6 +143,7 @@ export default function TaskCard() {
             )}
           </div>
 
+
           <div className="lg:w-72 shrink-0 flex flex-col gap-4">
             <div className="bg-white rounded-2xl shadow-sm p-5">
               <p className="text-xs text-[#9e9e9e] mb-1">{categoryEmoji} {category}</p>
