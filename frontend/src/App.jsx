@@ -41,14 +41,12 @@ import CuratorTasks from "./pages/CuratorTasks";
 import AddAnimalPage from "./pages/AddAnimalPage";
 import CreateTaskPage from "./pages/CreateTaskPage";
 
-// ─── SmartHeader ──────────────────────────────────────────────────────────────
 
 function SmartHeader() {
   const { user } = useAuth();
   return user ? <HeaderAuth /> : <Header />;
 }
 
-// ─── PrivateRoute ─────────────────────────────────────────────────────────────
 
 function PrivateRoute({ children, allowedRoles }) {
   const { user } = useAuth();
@@ -57,7 +55,6 @@ function PrivateRoute({ children, allowedRoles }) {
   return children;
 }
 
-// ─── DashboardRedirect ────────────────────────────────────────────────────────
 
 function DashboardRedirect() {
   const { user } = useAuth();
@@ -68,12 +65,12 @@ function DashboardRedirect() {
   return <Navigate to="/" replace />;
 }
 
-// ─── AppContent ───────────────────────────────────────────────────────────────
 
 function AppContent() {
   return (
-    <div className="font-sans">
+    <div className="font-sans min-h-screen flex flex-col">
       <SmartHeader />
+      <div className="flex-1 flex flex-col">
       <Routes>
         {/* Публичные */}
         <Route path="/"               element={<Home />} />
@@ -139,12 +136,13 @@ function AppContent() {
           <PrivateRoute allowedRoles={["owner"]}><OwnerRequests /></PrivateRoute>
         }/>
       </Routes>
+      </div>
       <Footer />
     </div>
   );
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+
 
 export default function App() {
   return (
