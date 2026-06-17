@@ -117,7 +117,7 @@ function AppContent() {
         <Route path="/tasks/card"   element={<TaskCard />} />
 
         {/* Авторизованные страницы */}
-        <Route path="/chat" element={
+        <Route path="/chat/:chatId?" element={
           <PrivateRoute><ChatPage /></PrivateRoute>
         }/>
         <Route path="/notifications" element={

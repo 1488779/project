@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { createNotification } = require('./notificationController');
+const { calculateDistance } = require('../utils/distance');
 const prisma = new PrismaClient();
 
 const getIconByCategory = (category) => {
@@ -16,7 +17,12 @@ const getIconByCategory = (category) => {
   return icons[category] || "📋";
 };
 
-const transformTask = (task) => {
+const transformTask = (task, volunteerLat = null, volunteerLng = null) => {
+  let distance = null;
+  if (volunteerLat && volunteerLng && task.lat && task.lng) {
+    distance = calculateDistance(volunteerLat, volunteerLng, task.lat, task.lng);
+  }
+
   return {
     id: task.id,
     title: task.title,
@@ -26,6 +32,9 @@ const transformTask = (task) => {
     timeFrom: task.timeFrom,
     timeTo: task.timeTo,
     address: task.address,
+    lat: task.lat,
+    lng: task.lng,
+    distance: distance,
     skills: task.skills,
     isUrgent: task.isUrgent,
     contactName: task.contactName,
@@ -36,6 +45,7 @@ const transformTask = (task) => {
     photos: task.photos,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
+    createdById: task.createdById,
     
     shelter: task.shelter?.orgName || null,
     icon: getIconByCategory(task.category),
@@ -60,15 +70,28 @@ const transformTask = (task) => {
   };
 };
 
+const getVolunteerCoords = async (userId) => {
+  if (!userId) return { lat: null, lng: null };
+  
+  const volunteer = await prisma.volunteer.findUnique({
+    where: { userId: userId },
+    select: { lat: true, lng: true }
+  });
+  
+  return { lat: volunteer?.lat || null, lng: volunteer?.lng || null };
+};
+
 const getAllTasks = async (req, res) => {
   try {
+    const { lat, lng } = await getVolunteerCoords(req.user?.id);
+    
     const tasks = await prisma.task.findMany({
       where: { moderationStatus: 'approved' },
       include: { shelter: true },
       orderBy: { createdAt: 'desc' }
     });
     
-    const transformed = tasks.map(transformTask);
+    const transformed = tasks.map(task => transformTask(task, lat, lng));
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка GET /api/tasks:', error);
@@ -79,6 +102,7 @@ const getAllTasks = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const { lat, lng } = await getVolunteerCoords(req.user?.id);
     
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Неверный ID задачи' });
@@ -93,7 +117,7 @@ const getTaskById = async (req, res) => {
       return res.status(404).json({ error: 'Задача не найдена' });
     }
     
-    const transformed = transformTask(task);
+    const transformed = transformTask(task, lat, lng);
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка GET /api/tasks/:id:', error);
@@ -104,6 +128,8 @@ const getTaskById = async (req, res) => {
 const getTasksByModerationStatus = async (req, res) => {
   try {
     const { status } = req.params;
+    const { lat, lng } = await getVolunteerCoords(req.user?.id);
+    
     const validStatuses = ['pending', 'approved', 'rejected'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Неверный статус' });
@@ -115,7 +141,7 @@ const getTasksByModerationStatus = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     
-    const transformed = tasks.map(transformTask);
+    const transformed = tasks.map(task => transformTask(task, lat, lng));
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка GET /api/tasks/moderation/:status:', error);
@@ -125,12 +151,14 @@ const getTasksByModerationStatus = async (req, res) => {
 
 const getAllTasksAdmin = async (req, res) => {
   try {
+    const { lat, lng } = await getVolunteerCoords(req.user?.id);
+    
     const tasks = await prisma.task.findMany({
       include: { shelter: true },
       orderBy: { createdAt: 'desc' }
     });
     
-    const transformed = tasks.map(transformTask);
+    const transformed = tasks.map(task => transformTask(task, lat, lng));
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка GET /api/tasks/all:', error);
@@ -208,7 +236,8 @@ const createTask = async (req, res) => {
     const {
       title, description, category, date, timeFrom, timeTo,
       address, skills, isUrgent, contactName, contactRole,
-      contactPhone, photos, shelterId, createdById
+      contactPhone, photos, shelterId, createdById,
+      lat, lng
     } = req.body;
     
     if (!title || !title.trim()) {
@@ -224,6 +253,8 @@ const createTask = async (req, res) => {
         timeFrom: timeFrom || null,
         timeTo: timeTo || null,
         address: address || null,
+        lat: lat || null,
+        lng: lng || null,
         skills: skills || [],
         isUrgent: isUrgent || false,
         contactName: contactName || null,
@@ -233,7 +264,7 @@ const createTask = async (req, res) => {
         shelterId: shelterId || null,
         createdById: createdById || null,
         status: 'open',
-        moderationStatus: 'pending'
+        moderationStatus: 'approved'
       }
     });
     
@@ -250,7 +281,7 @@ const updateTask = async (req, res) => {
     const {
       title, description, category, date, timeFrom, timeTo,
       address, skills, isUrgent, contactName, contactRole,
-      contactPhone, photos, status
+      contactPhone, photos, status, lat, lng
     } = req.body;
     
     const existingTask = await prisma.task.findUnique({ where: { id } });
@@ -268,6 +299,8 @@ const updateTask = async (req, res) => {
         timeFrom: timeFrom !== undefined ? timeFrom : existingTask.timeFrom,
         timeTo: timeTo !== undefined ? timeTo : existingTask.timeTo,
         address: address !== undefined ? address : existingTask.address,
+        lat: lat !== undefined ? lat : existingTask.lat,
+        lng: lng !== undefined ? lng : existingTask.lng,
         skills: skills !== undefined ? skills : existingTask.skills,
         isUrgent: isUrgent !== undefined ? isUrgent : existingTask.isUrgent,
         contactName: contactName !== undefined ? contactName : existingTask.contactName,
@@ -403,6 +436,7 @@ const completeTask = async (req, res) => {
 const getMyActiveTasks = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { lat, lng } = await getVolunteerCoords(userId);
 
     const volunteer = await prisma.volunteer.findUnique({
       where: { userId: userId }
@@ -428,7 +462,11 @@ const getMyActiveTasks = async (req, res) => {
       datetime: task.date ? (task.timeFrom ? `${task.date}, ${task.timeFrom}` : task.date) : null,
       status: 'В работе',
       contactName: task.contactName,
-      contactPhone: task.contactPhone
+      contactPhone: task.contactPhone,
+      createdById: task.createdById,
+      lat: task.lat,
+      lng: task.lng,
+      distance: lat && lng && task.lat && task.lng ? calculateDistance(lat, lng, task.lat, task.lng) : null
     }));
 
     res.json({ success: true, data: formattedTasks });
@@ -476,6 +514,7 @@ const getMyTaskHistory = async (req, res) => {
 const getMyCreatedTasks = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const { lat, lng } = await getVolunteerCoords(userId);
     
     if (!userId) {
       return res.status(401).json({ error: 'Не авторизован' });
@@ -486,7 +525,7 @@ const getMyCreatedTasks = async (req, res) => {
       include: { shelter: true },
       orderBy: { createdAt: 'desc' }
     });
-    const transformed = tasks.map(transformTask);
+    const transformed = tasks.map(task => transformTask(task, lat, lng));
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка:', error);
@@ -497,6 +536,7 @@ const getMyCreatedTasks = async (req, res) => {
 const getShelterTasks = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { lat, lng } = await getVolunteerCoords(userId);
     
     const curator = await prisma.curator.findUnique({
       where: { userId: userId }
@@ -512,7 +552,7 @@ const getShelterTasks = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     
-    const transformed = tasks.map(transformTask);
+    const transformed = tasks.map(task => transformTask(task, lat, lng));
     res.json(transformed);
   } catch (error) {
     console.error('Ошибка получения задач приюта:', error);
@@ -535,5 +575,5 @@ module.exports = {
   getMyActiveTasks,
   getMyTaskHistory,
   getMyCreatedTasks,
-  getShelterTasks
+  getShelterTasks,
 };

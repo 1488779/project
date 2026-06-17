@@ -44,7 +44,9 @@ export default function VolunteerDashboard() {
   useEffect(() => {
     api.getTasks()
       .then(tasks => tasks.filter(t => t.status === "open"))
-      .then(setTasks)
+      .then(tasks => {
+        setTasks(tasks);
+      })
       .catch(err => console.error('Ошибка загрузки задач:', err))
       .finally(() => setLoadingT(false));
     
@@ -65,8 +67,7 @@ export default function VolunteerDashboard() {
       case "Мои задачи":
         return myTasks;
       case "Рядом":
-        // TODO: добавить фильтрацию по расстоянию, когда будет готово
-        return tasks;
+        return tasks.filter(t => t.distance !== null && t.distance !== undefined && t.distance <= 5);
       default:
         return tasks;
     }
@@ -82,6 +83,14 @@ export default function VolunteerDashboard() {
     if (t.includes("кош") || t.includes("кот")) return "🐈";
     if (t.includes("собак") || t.includes("пёс")) return "🐕";
     return "🐾";
+  };
+
+  const formatDistance = (distance) => {
+    if (distance === null || distance === undefined) return null;
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)} м`;
+    }
+    return `${distance} км`;
   };
 
   return (
@@ -108,7 +117,7 @@ export default function VolunteerDashboard() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-extrabold text-[#212121]">
-              {activeFilter === "Мои задачи" ? "Мои задачи" : "Рекомендовано для вас"}
+              {activeFilter === "Мои задачи" ? "Мои задачи" : activeFilter === "Рядом" ? "Задачи рядом" : "Рекомендовано для вас"}
             </h2>
             {activeFilter !== "Мои задачи" && (
               <button onClick={() => navigate("/tasks-page")} className="text-sm font-bold text-[#3a7d44] hover:underline">
@@ -121,7 +130,7 @@ export default function VolunteerDashboard() {
               <TaskSkeletons />
             ) : displayTasks.length === 0 ? (
               <p className="col-span-4 text-sm text-[#9e9e9e]">
-                {activeFilter === "Мои задачи" ? "У вас нет активных задач" : "Задач пока нет"}
+                {activeFilter === "Мои задачи" ? "У вас нет активных задач" : activeFilter === "Рядом" ? "Нет задач рядом с вами" : "Задач пока нет"}
               </p>
             ) : (
               displayTasks.map((t) => (
@@ -135,6 +144,9 @@ export default function VolunteerDashboard() {
                   </div>
                   <p className="text-sm font-bold text-[#212121] mb-1 leading-snug">{t.title}</p>
                   <p className="text-xs text-[#9e9e9e] mb-1">{t.shelter}</p>
+                  {t.distance !== null && t.distance !== undefined && (
+                    <p className="text-xs text-green-700 mb-2">📍 {formatDistance(t.distance)} от вас</p>
+                  )}
                   <button className="bg-[#e8f5e9] text-[#3a7d44] text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#3a7d44] hover:text-white transition-colors">
                     {activeFilter === "Мои задачи" ? "В работе →" : "Взять →"}
                   </button>
@@ -191,6 +203,9 @@ export default function VolunteerDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[#212121]">{t.title}</p>
                     <p className="text-xs text-[#9e9e9e] mt-0.5">{t.shelter}</p>
+                    {t.distance !== null && t.distance !== undefined && (
+                      <p className="text-xs text-green-700">📍 {formatDistance(t.distance)} от вас</p>
+                    )}
                   </div>
                   <button
                     onClick={() => navigate(`/tasks/${t.id}`)}

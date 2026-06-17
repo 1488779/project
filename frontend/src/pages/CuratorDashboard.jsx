@@ -57,12 +57,20 @@ export default function CuratorDashboard() {
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [volunteersCount, setVolunteersCount] = useState(0);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(false);
 
   useEffect(() => {
     api.getShelterTasks()
       .then(setTasks)
       .catch(err => console.error('Ошибка загрузки задач:', err))
       .finally(() => setLoading(false));
+    
+    setLoadingVolunteers(true);
+    api.getVolunteersCountByShelter()
+      .then(data => setVolunteersCount(data.count || 0))
+      .catch(err => console.error('Ошибка подсчёта волонтёров:', err))
+      .finally(() => setLoadingVolunteers(false));
   }, []);
 
   const activeTasks = tasks.filter((t) => t.status === "open" || t.status === "active");
@@ -70,7 +78,7 @@ export default function CuratorDashboard() {
   const stats = [
     { value: loading ? "…" : activeTasks.length, label: "Активных задач" },
     { value: loading ? "…" : tasks.length, label: "Всего задач" },
-    { value: "—", label: "Волонтёров в районе" },
+    { value: loadingVolunteers ? "…" : volunteersCount, label: "Волонтёров в районе" },
   ];
 
   return (
@@ -83,8 +91,8 @@ export default function CuratorDashboard() {
             Добро пожаловать, {user?.name?.split(" ")[0] ?? "Куратор"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-           Панель управления куратора {user?.shelterName ? `• ${user.shelterName}` : ''}
-           </p>
+            Панель управления куратора {user?.shelterName ? `• ${user.shelterName}` : ''}
+          </p>
         </div>
 
         {/* Stats */}

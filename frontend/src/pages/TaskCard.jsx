@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import MapComponent from "../components/map/MapComponent";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -39,18 +40,17 @@ export default function TaskCard() {
   }, [id]);
 
   const takeTask = async () => {
-  if (!user) return;
-  setTaking(true);
-  try {
-    await api.takeTask(id, user.id);
-    alert("Задача взята в работу");
-    navigate("/dashboard/volunteer");
-  } catch (err) {
-    alert("Ошибка: " + err.message);
-  } finally {
-    setTaking(false);
-  }
-};
+    if (!user) return;
+    setTaking(true);
+    try {
+      await api.takeTask(id, user.id);
+      navigate("/dashboard/volunteer");
+    } catch (err) {
+      console.error("Ошибка:", err);
+    } finally {
+      setTaking(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-[#f2f3f1] flex items-center justify-center text-[#9e9e9e]">
@@ -75,7 +75,7 @@ export default function TaskCard() {
   const address       = extra.address       || task.shelter || "—";
   const description   = extra.description  || "—";
   const skills        = extra.skills        || [];
-  const photos        = extra.photos        || [];
+  const photos        = task.photos || extra.photos || [];
   const contact       = extra.contact       || null;
   const isActive = task.status === 'active';
   const isCompleted = task.status === 'completed';
@@ -94,19 +94,15 @@ export default function TaskCard() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left */}
           <div className="flex-1">
-            <div className="bg-[#f5f5f5] rounded-2xl w-full h-64 flex items-center justify-center text-[#9e9e9e] text-sm mb-3">
-              📷 Фото задачи
-            </div>
-            {photos.length > 0 && (
-              <div className="flex gap-2 mb-6">
-                {photos.map((p, i) => (
-                  <img 
-                    key={i} 
-                    src={`${BASE}${p}`} 
-                    className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    alt={`Фото ${i + 1}`}
-                  />
-                ))}
+            {photos && photos.length > 0 ? (
+              <img 
+                src={`${BASE}${photos[0]}`} 
+                className="rounded-2xl w-full h-64 object-cover mb-3"
+                alt="Фото задачи"
+              />
+            ) : (
+              <div className="bg-[#f5f5f5] rounded-2xl w-full h-64 flex items-center justify-center text-[#9e9e9e] text-sm mb-3">
+                📷 Фото задачи
               </div>
             )}
 
@@ -179,8 +175,14 @@ export default function TaskCard() {
                 <p className="text-sm text-[#212121]">{address}</p>
               </div>
 
-              <div className="bg-[#f5f5f5] rounded-xl h-24 flex items-center justify-center text-[#9e9e9e] text-sm mb-4">
-                🗺️ Мини-карта
+              <div className="rounded-xl overflow-hidden h-32 mb-4">
+                <MapComponent 
+                  lat={task.lat || extra.lat}
+                  lng={task.lng || extra.lng}
+                  address={address}
+                  height="128"
+                  interactive={true}
+                />
               </div>
 
               {!isActive && !isCompleted && (
@@ -223,10 +225,21 @@ export default function TaskCard() {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate("/chat")}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-200 text-[#616161] text-sm py-2 rounded-xl hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
+                  onClick={async () => {
+                    if (!task.createdById) {
+                      console.error("Нет createdById у задачи");
+                      return;
+                    }
+                    try {
+                      const response = await api.createChat(task.createdById);
+                      navigate(`/chat/${response.data.id}`);
+                    } catch (error) {
+                      console.error("Ошибка:", error);
+                    }
+                  }}
+                  className="text-xs text-gray-500 hover:text-green-600 transition whitespace-nowrap"
                 >
-                  💬 Написать
+                  ✉️ Написать куратору
                 </button>
               </div>
             )}

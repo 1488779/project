@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import MapComponent from "../components/map/MapComponent";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -101,7 +102,6 @@ export default function AnimalCard() {
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: photos */}
           <div className="lg:w-96 shrink-0">
             <div className="bg-[#f5f5f5] rounded-2xl w-full aspect-square flex items-center justify-center text-9xl mb-3">
               {emoji}
@@ -120,7 +120,6 @@ export default function AnimalCard() {
             )}
           </div>
 
-          {/* Right: info */}
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold text-[#212121] mb-3">{animal.name}</h1>
 
@@ -164,8 +163,14 @@ export default function AnimalCard() {
                 <span className="text-[#e53935]"><MapPinIcon /></span>
                 {shelter}, {address}
               </p>
-              <div className="bg-[#f5f5f5] rounded-2xl h-36 flex items-center justify-center text-[#9e9e9e] text-sm">
-                🗺️ Карта
+              <div className="rounded-2xl overflow-hidden h-48">
+                <MapComponent 
+                  lat={animal.lat || extra.lat}
+                  lng={animal.lng || extra.lng}
+                  address={address}
+                  height="192"
+                  interactive={true}
+                />
               </div>
             </div>
 
