@@ -9,7 +9,6 @@ const AboutProject = () => {
           О проекте
         </h1>
 
-        {/* Белая карточка с текстом */}
         <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm">
           <p className="text-gray-700 leading-relaxed mb-6">
             Мы — платформа, объединяющая неравнодушных людей и приюты для животных по всей стране.

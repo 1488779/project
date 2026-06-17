@@ -101,7 +101,6 @@ export default function AnimalCard() {
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: photos */}
           <div className="lg:w-96 shrink-0">
             <div className="bg-[#f5f5f5] rounded-2xl w-full aspect-square flex items-center justify-center text-9xl mb-3">
               {emoji}
@@ -120,7 +119,6 @@ export default function AnimalCard() {
             )}
           </div>
 
-          {/* Right: info */}
           <div className="flex-1">
             <h1 className="text-3xl font-extrabold text-[#212121] mb-3">{animal.name}</h1>
 

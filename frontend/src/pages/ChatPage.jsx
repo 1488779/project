@@ -70,7 +70,6 @@ export default function ChatPage() {
           className="bg-white rounded-2xl shadow-sm overflow-hidden flex"
           style={{ height: "calc(100vh - 120px)" }}
         >
-          {/* Sidebar */}
           <div className="w-72 border-r border-gray-100 flex flex-col shrink-0">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-lg font-extrabold text-[#212121]">Сообщения</h2>
@@ -114,7 +113,6 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Chat area */}
           <div className="flex-1 flex flex-col min-w-0">
             {selectedChat ? (
               <>

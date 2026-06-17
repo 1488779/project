@@ -85,6 +85,7 @@ export const api = {
   createFosterRequest: (data) => request("/api/foster-requests", { method: "POST", body: JSON.stringify(data) }),
   getOwnerFosterRequests: () => request("/api/foster-requests/owner"),
   getVolunteerFosterRequests: () => request("/api/foster-requests/volunteer"),
+  getMyActiveTasks: () => request("/api/tasks/my"),
   getFosterRequestById: (id) => request(`/api/foster-requests/${id}`),
   updateFosterRequestStatus: (id, status) => request(`/api/foster-requests/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
 

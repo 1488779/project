@@ -37,7 +37,6 @@ export default function TaskCard() {
   const takeTask = async () => {
     if (!user) { navigate("/login-page"); return; }
 
-    // volunteerId приходит из ответа логина
     const volunteerId = user.volunteerId;
     if (!volunteerId) {
       alert("Взять задачу могут только волонтёры");
@@ -47,7 +46,6 @@ export default function TaskCard() {
     setTaking(true);
     try {
       await api.takeTask(id, volunteerId);
-      // Обновляем локальное состояние — не перезагружаем страницу
       setTask((prev) => ({ ...prev, status: "active" }));
     } catch (err) {
       alert("Ошибка: " + err.message);
@@ -69,7 +67,6 @@ export default function TaskCard() {
     </div>
   );
 
-  // Поля могут лежать как в корне задачи, так и в extraData (обратная совместимость)
   const extra         = task.extraData || {};
   const category      = task.category      || extra.category      || "Задача";
   const categoryEmoji = extra.categoryEmoji || "📋";
@@ -137,7 +134,7 @@ export default function TaskCard() {
             )}
           </div>
 
-          {/* Right sidebar */}
+
           <div className="lg:w-72 shrink-0 flex flex-col gap-4">
             <div className="bg-white rounded-2xl shadow-sm p-5">
               <p className="text-xs text-[#9e9e9e] mb-1">{categoryEmoji} {category}</p>
@@ -197,7 +194,6 @@ export default function TaskCard() {
                 🗺️ Мини-карта
               </div>
 
-              {/* Кнопка "Взять задачу" — только для волонтёра, только если задача свободна */}
               {!isActive && !isCompleted && isVolunteer && (
                 <button
                   onClick={takeTask}

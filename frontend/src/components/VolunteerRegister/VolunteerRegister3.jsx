@@ -45,7 +45,6 @@ export default function VolunteerRegister3() {
       notifyPush:   form.notifyPush,
       notifyDigest: form.notifyDigest,
       password,
-      // skills берём только с шага 1 — дублей больше нет
       skills: step1.skills || [],
     };
 
@@ -56,7 +55,6 @@ export default function VolunteerRegister3() {
         localStorage.removeItem("volunteerStep1");
         localStorage.removeItem("volunteerStep2");
 
-        // Логинимся через реальный API чтобы получить токен и роль
         await login(step1.email || step1.phone, password);
         navigate("/dashboard");
       } else {
