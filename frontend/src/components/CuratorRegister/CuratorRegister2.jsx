@@ -162,27 +162,23 @@ export default function CuratorShelter() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 px-4">
       <div className="bg-white rounded-2xl shadow-md w-full max-w-xl p-8">
-        {/* Прогресс */}
         <p className="text-xs text-gray-400 mb-1">Шаг 2 из 2</p>
         <div className="h-1 w-full bg-green-600 rounded-full mb-6" />
 
         <h1 className="text-xl font-bold text-gray-900 mb-4">Приют</h1>
 
-        {/* Ошибка */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Успех */}
         {success && (
           <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
             {success}
           </div>
         )}
 
-        {/* Табы */}
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setTab("create")}
@@ -210,7 +206,6 @@ export default function CuratorShelter() {
 
         {tab === "create" ? (
           <>
-            {/* Название */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Название приюта <span className="text-red-500">*</span>
@@ -224,7 +219,6 @@ export default function CuratorShelter() {
               />
             </div>
 
-            {/* Описание */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Описание
@@ -238,7 +232,6 @@ export default function CuratorShelter() {
               />
             </div>
 
-            {/* Логотип */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Логотип
@@ -270,7 +263,6 @@ export default function CuratorShelter() {
               />
             </div>
 
-            {/* Email */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Контактный email (для публикации задач)
@@ -284,7 +276,6 @@ export default function CuratorShelter() {
               />
             </div>
 
-            {/* Телефон */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Телефон приюта
@@ -298,7 +289,6 @@ export default function CuratorShelter() {
               />
             </div>
 
-            {/* Адрес */}
             <div className="mb-8">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Адрес <span className="text-red-500">*</span>
@@ -369,7 +359,6 @@ export default function CuratorShelter() {
           </div>
         )}
 
-        {/* Кнопки */}
         <div className="flex justify-between items-center">
           <button
             onClick={() => navigate("/register/curator")}

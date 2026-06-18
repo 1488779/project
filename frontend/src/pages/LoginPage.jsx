@@ -80,14 +80,12 @@ const handleSubmit = async () => {
           <p className="text-sm text-gray-500">Войдите в свой аккаунт</p>
         </div>
 
-        {/* Общая ошибка авторизации */}
         {authError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
             {authError}
           </div>
         )}
 
-        {/* Email */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email или телефон <span className="text-red-500">*</span>
@@ -102,7 +100,6 @@ const handleSubmit = async () => {
           {emailError && <p className="text-xs text-red-500 mt-1">Введите email или телефон</p>}
         </div>
 
-        {/* Password */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Пароль <span className="text-red-500">*</span>
@@ -122,7 +119,6 @@ const handleSubmit = async () => {
           {passwordError && <p className="text-xs text-red-500 mt-1">Введите пароль</p>}
         </div>
 
-        {/* Remember + Forgot */}
         <div className="flex items-center justify-between mb-5">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" className="checkbox-custom" checked={remember} onChange={e => setRemember(e.target.checked)} />
@@ -133,7 +129,6 @@ const handleSubmit = async () => {
           </button>
         </div>
 
-        {/* Submit */}
         <button
           type="button"
           onClick={handleSubmit}
@@ -145,7 +140,6 @@ const handleSubmit = async () => {
           {loading ? "Входим..." : "Войти"}
         </button>
 
-        {/* Register */}
         <div className="text-center mt-5">
           <p className="text-sm text-gray-500">
             Ещё нет аккаунта?{" "}

@@ -100,19 +100,16 @@ export default function AnimalsPage() {
         </select>
       </div>
 
-      {/* Ошибка */}
       {error && (
         <div className="text-center py-16 text-red-500">{error}</div>
       )}
 
-      {/* Скелетоны при загрузке */}
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
-      {/* Пусто */}
       {!loading && !error && filtered.length === 0 && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-4xl mb-3">🐾</p>
@@ -120,7 +117,6 @@ export default function AnimalsPage() {
         </div>
       )}
 
-      {/* Карточки */}
       {!loading && !error && filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {filtered.map((animal) => {
