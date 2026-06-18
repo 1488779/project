@@ -23,10 +23,10 @@ export default function TaskCard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [task, setTask]     = useState(null);
+  const [task, setTask]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(null);
-  const [taking, setTaking] = useState(false);
+  const [error, setError]     = useState(null);
+  const [taking, setTaking]   = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -36,15 +36,6 @@ export default function TaskCard() {
   }, [id]);
 
   const takeTask = async () => {
-<<<<<<< HEAD
-    if (!user) return;
-    setTaking(true);
-    try {
-      await api.takeTask(id, user.id);
-      navigate("/dashboard/volunteer");
-    } catch (err) {
-      console.error("Ошибка:", err);
-=======
     if (!user) { navigate("/login-page"); return; }
 
     const volunteerId = user.volunteerId;
@@ -59,7 +50,6 @@ export default function TaskCard() {
       setTask((prev) => ({ ...prev, status: "active" }));
     } catch (err) {
       alert("Ошибка: " + err.message);
->>>>>>> upstream/main
     } finally {
       setTaking(false);
     }
@@ -82,18 +72,6 @@ export default function TaskCard() {
   const category      = task.category      || extra.category      || "Задача";
   const categoryEmoji = extra.categoryEmoji || "📋";
   const rating        = extra.rating        || 0;
-<<<<<<< HEAD
-  const date          = extra.date          || "—";
-  const timeFrom      = extra.timeFrom      || "";
-  const timeTo        = extra.timeTo        || "";
-  const address       = extra.address       || task.shelter || "—";
-  const description   = extra.description  || "—";
-  const skills        = extra.skills        || [];
-  const photos        = task.photos || extra.photos || [];
-  const contact       = extra.contact       || null;
-  const isActive = task.status === 'active';
-  const isCompleted = task.status === 'completed';
-=======
   const date          = task.date           || extra.date          || "—";
   const timeFrom      = task.timeFrom       || extra.timeFrom      || "";
   const timeTo        = task.timeTo         || extra.timeTo        || "";
@@ -109,7 +87,6 @@ export default function TaskCard() {
   const isCompleted = task.status === "completed" || task.status === "done";
   const isVolunteer = user?.role === "volunteer";
   const alreadyTaken = isActive && task.volunteerId === user?.volunteerId;
->>>>>>> upstream/main
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -123,33 +100,29 @@ export default function TaskCard() {
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left */}
           <div className="flex-1">
-<<<<<<< HEAD
-            {photos && photos.length > 0 ? (
-              <img 
-                src={`${BASE}${photos[0]}`} 
+            {photos.length > 0 ? (
+              <img
+                src={photos[0].startsWith("http") ? photos[0] : `${BASE}${photos[0]}`}
                 className="rounded-2xl w-full h-64 object-cover mb-3"
                 alt="Фото задачи"
               />
             ) : (
               <div className="bg-[#f5f5f5] rounded-2xl w-full h-64 flex items-center justify-center text-[#9e9e9e] text-sm mb-3">
                 📷 Фото задачи
-=======
-            <div className="bg-[#f5f5f5] rounded-2xl w-full h-64 flex items-center justify-center text-[#9e9e9e] text-sm mb-3">
-              📷 Фото задачи
-            </div>
-            {photos.length > 0 && (
+              </div>
+            )}
+
+            {photos.length > 1 && (
               <div className="flex gap-2 mb-6">
-                {photos.map((p, i) => (
+                {photos.slice(1).map((p, i) => (
                   <img
                     key={i}
                     src={p.startsWith("http") ? p : `${BASE}${p}`}
                     className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    alt={`Фото ${i + 1}`}
+                    alt={`Фото ${i + 2}`}
                   />
                 ))}
->>>>>>> upstream/main
               </div>
             )}
 
@@ -227,7 +200,7 @@ export default function TaskCard() {
               </div>
 
               <div className="rounded-xl overflow-hidden h-32 mb-4">
-                <MapComponent 
+                <MapComponent
                   lat={task.lat || extra.lat}
                   lng={task.lng || extra.lng}
                   address={address}

@@ -81,11 +81,7 @@ export default function VolunteerDashboard() {
       case "Мои задачи":
         return myTasks;
       case "Рядом":
-<<<<<<< HEAD
         return tasks.filter(t => t.distance !== null && t.distance !== undefined && t.distance <= 5);
-=======
-        return tasks;
->>>>>>> upstream/main
       default:
         return tasks;
     }
