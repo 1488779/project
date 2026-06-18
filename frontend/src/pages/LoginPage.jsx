@@ -155,28 +155,6 @@ const handleSubmit = async () => {
           </p>
         </div>
       </div>
-            {/* Быстрый вход для разработки */}
-      {import.meta.env.DEV && (
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400 text-center mb-2">Быстрый вход (только в dev)</p>
-          <div className="flex flex-col gap-2">
-            {[
-              { label: "Войти как волонтёр", email: "volunteer@test.com" },
-              { label: "Войти как куратор",  email: "curator@test.com"   },
-              { label: "Войти как владелец", email: "owner@test.com"     },
-            ].map(({ label, email }) => (
-              <button
-                key={email}
-                type="button"
-                onClick={async () => { await login(email, "1234"); navigate("/dashboard"); }}
-                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
