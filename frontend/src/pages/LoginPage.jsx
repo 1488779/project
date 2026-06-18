@@ -80,14 +80,12 @@ const handleSubmit = async () => {
           <p className="text-sm text-gray-500">Войдите в свой аккаунт</p>
         </div>
 
-        {/* Общая ошибка авторизации */}
         {authError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
             {authError}
           </div>
         )}
 
-        {/* Email */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email или телефон <span className="text-red-500">*</span>
@@ -102,7 +100,6 @@ const handleSubmit = async () => {
           {emailError && <p className="text-xs text-red-500 mt-1">Введите email или телефон</p>}
         </div>
 
-        {/* Password */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Пароль <span className="text-red-500">*</span>
@@ -122,7 +119,6 @@ const handleSubmit = async () => {
           {passwordError && <p className="text-xs text-red-500 mt-1">Введите пароль</p>}
         </div>
 
-        {/* Remember + Forgot */}
         <div className="flex items-center justify-between mb-5">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" className="checkbox-custom" checked={remember} onChange={e => setRemember(e.target.checked)} />
@@ -133,7 +129,6 @@ const handleSubmit = async () => {
           </button>
         </div>
 
-        {/* Submit */}
         <button
           type="button"
           onClick={handleSubmit}
@@ -145,7 +140,6 @@ const handleSubmit = async () => {
           {loading ? "Входим..." : "Войти"}
         </button>
 
-        {/* Register */}
         <div className="text-center mt-5">
           <p className="text-sm text-gray-500">
             Ещё нет аккаунта?{" "}
@@ -155,28 +149,6 @@ const handleSubmit = async () => {
           </p>
         </div>
       </div>
-            {/* Быстрый вход для разработки */}
-      {import.meta.env.DEV && (
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400 text-center mb-2">Быстрый вход (только в dev)</p>
-          <div className="flex flex-col gap-2">
-            {[
-              { label: "Войти как волонтёр", email: "volunteer@test.com" },
-              { label: "Войти как куратор",  email: "curator@test.com"   },
-              { label: "Войти как владелец", email: "owner@test.com"     },
-            ].map(({ label, email }) => (
-              <button
-                key={email}
-                type="button"
-                onClick={async () => { await login(email, "1234"); navigate("/dashboard"); }}
-                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
