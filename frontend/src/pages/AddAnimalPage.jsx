@@ -16,6 +16,7 @@ export default function AddAnimalPage() {
     breed: "",
     age: "",
     color: "",
+    weight: "",
     description: "",
     photo: null,
     vaccinated: false,
@@ -54,7 +55,7 @@ export default function AddAnimalPage() {
         breed: form.breed || null,
         color: form.color || null,
         description: form.description || null,
-        weight: null,
+        weight: form.weight ? parseFloat(form.weight) : null,
         isVaccinated: form.vaccinated,
         isSterilized: form.sterilized,
         isChipped: form.chipped,
@@ -98,12 +99,10 @@ export default function AddAnimalPage() {
         <div className="bg-white rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-extrabold text-[#212121] mb-4">Добавить животное</h1>
 
-          {/* Notice */}
           <div className="bg-[#fff8e1] border border-[#ffe082] rounded-xl px-4 py-3 text-sm text-[#b28704] mb-6">
             ⚠️ Анкета животного пройдёт модерацию. После одобрения она появится в каталоге.
           </div>
 
-          {/* Ошибка */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
               {error}
@@ -111,7 +110,6 @@ export default function AddAnimalPage() {
           )}
 
           <div className="flex flex-col gap-5">
-            {/* Кличка */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">
                 Кличка <span className="text-[#e53935]">*</span>
@@ -125,7 +123,6 @@ export default function AddAnimalPage() {
               />
             </div>
 
-            {/* Вид + Порода */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#424242] mb-1.5">Вид</label>
@@ -149,7 +146,6 @@ export default function AddAnimalPage() {
               </div>
             </div>
 
-            {/* Возраст + Окрас */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#424242] mb-1.5">
@@ -175,7 +171,19 @@ export default function AddAnimalPage() {
               </div>
             </div>
 
-            {/* Описание */}
+            <div>
+              <label className="block text-sm font-medium text-[#424242] mb-1.5">Вес (кг)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={form.weight}
+                onChange={(e) => set("weight", e.target.value)}
+                placeholder="3.5"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Описание</label>
               <textarea
@@ -187,7 +195,6 @@ export default function AddAnimalPage() {
               />
             </div>
 
-            {/* Фото */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Фото</label>
               <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#3a7d44] hover:bg-[#f0f7f1] transition-all">
@@ -204,7 +211,6 @@ export default function AddAnimalPage() {
               </label>
             </div>
 
-            {/* Checkboxes */}
             <div className="flex flex-col gap-2">
               {[
                 { key: "vaccinated", label: "Вакцинирован" },
@@ -223,7 +229,6 @@ export default function AddAnimalPage() {
               ))}
             </div>
 
-            {/* Особые условия */}
             <div>
               <label className="block text-sm font-medium text-[#424242] mb-1.5">Особые условия</label>
               <input
@@ -235,7 +240,6 @@ export default function AddAnimalPage() {
               />
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-1">
               <button
                 onClick={handleSubmit}

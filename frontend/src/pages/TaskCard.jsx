@@ -30,23 +30,31 @@ export default function TaskCard() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${BASE}/api/tasks/${id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Задача не найдена");
-        return r.json();
-      })
+    api.getTask(id)
       .then((data) => { setTask(data); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
   }, [id]);
 
   const takeTask = async () => {
-    if (!user) return;
+    if (!user) {
+      navigate("/login-page");
+      return;
+    }
+
+    const volunteerId = user.volunteerId;
+    if (!volunteerId) {
+      alert("Взять задачу могут только волонтёры");
+      return;
+    }
+
     setTaking(true);
     try {
-      await api.takeTask(id, user.id);
+      await api.takeTask(id, volunteerId);
+      setTask((prev) => ({ ...prev, status: "active" }));
       navigate("/dashboard/volunteer");
     } catch (err) {
       console.error("Ошибка:", err);
+      alert("Ошибка: " + err.message);
     } finally {
       setTaking(false);
     }
@@ -65,20 +73,25 @@ export default function TaskCard() {
     </div>
   );
 
-  const extra    = task.extraData || {};
-  const category      = extra.category      || "Задача";
+  const extra = task.extraData || {};
+  const category = task.category || extra.category || "Задача";
   const categoryEmoji = extra.categoryEmoji || "📋";
-  const rating        = extra.rating        || 0;
-  const date          = extra.date          || "—";
-  const timeFrom      = extra.timeFrom      || "";
-  const timeTo        = extra.timeTo        || "";
-  const address       = extra.address       || task.shelter || "—";
-  const description   = extra.description  || "—";
-  const skills        = extra.skills        || [];
-  const photos        = task.photos || extra.photos || [];
-  const contact       = extra.contact       || null;
-  const isActive = task.status === 'active';
-  const isCompleted = task.status === 'completed';
+  const rating = extra.rating || 0;
+  const date = task.date || extra.date || "—";
+  const timeFrom = task.timeFrom || extra.timeFrom || "";
+  const timeTo = task.timeTo || extra.timeTo || "";
+  const address = task.address || extra.address || task.shelter || "—";
+  const description = task.description || extra.description || "—";
+  const skills = task.skills || extra.skills || [];
+  const photos = task.photos || extra.photos || [];
+  const contact = task.contactName
+    ? { name: task.contactName, role: task.contactRole, phone: task.contactPhone }
+    : extra.contact || null;
+
+  const isActive = task.status === "active";
+  const isCompleted = task.status === "completed" || task.status === "done";
+  const isVolunteer = user?.role === "volunteer";
+  const alreadyTaken = isActive && task.volunteerId === user?.volunteerId;
 
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
@@ -92,17 +105,28 @@ export default function TaskCard() {
         </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left */}
           <div className="flex-1">
             {photos && photos.length > 0 ? (
               <img 
-                src={`${BASE}${photos[0]}`} 
+                src={photos[0].startsWith("http") ? photos[0] : `${BASE}${photos[0]}`} 
                 className="rounded-2xl w-full h-64 object-cover mb-3"
                 alt="Фото задачи"
               />
             ) : (
               <div className="bg-[#f5f5f5] rounded-2xl w-full h-64 flex items-center justify-center text-[#9e9e9e] text-sm mb-3">
                 📷 Фото задачи
+              </div>
+            )}
+            {photos.length > 0 && (
+              <div className="flex gap-2 mb-6">
+                {photos.map((p, i) => (
+                  <img
+                    key={i}
+                    src={p.startsWith("http") ? p : `${BASE}${p}`}
+                    className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    alt={`Фото ${i + 1}`}
+                  />
+                ))}
               </div>
             )}
 
@@ -123,7 +147,6 @@ export default function TaskCard() {
             )}
           </div>
 
-          {/* Right sidebar */}
           <div className="lg:w-72 shrink-0 flex flex-col gap-4">
             <div className="bg-white rounded-2xl shadow-sm p-5">
               <p className="text-xs text-[#9e9e9e] mb-1">{categoryEmoji} {category}</p>
@@ -137,12 +160,16 @@ export default function TaskCard() {
                 </div>
               </div>
 
-              {isActive && (
+              {alreadyTaken && (
+                <div className="bg-blue-100 text-blue-700 text-sm font-bold px-3 py-1 rounded-full mb-4 text-center">
+                  Вы взяли эту задачу
+                </div>
+              )}
+              {isActive && !alreadyTaken && (
                 <div className="bg-blue-100 text-blue-700 text-sm font-bold px-3 py-1 rounded-full mb-4 text-center">
                   В работе
                 </div>
               )}
-
               {isCompleted && (
                 <div className="bg-green-100 text-green-700 text-sm font-bold px-3 py-1 rounded-full mb-4 text-center">
                   Выполнена
@@ -185,7 +212,7 @@ export default function TaskCard() {
                 />
               </div>
 
-              {!isActive && !isCompleted && (
+              {!isActive && !isCompleted && isVolunteer && (
                 <button
                   onClick={takeTask}
                   disabled={taking}
@@ -195,20 +222,23 @@ export default function TaskCard() {
                 </button>
               )}
 
-              {isActive && (
+              {!isActive && !isCompleted && !isVolunteer && !user && (
                 <button
-                  disabled
-                  className="w-full bg-gray-400 text-white font-bold py-3 rounded-xl text-sm cursor-not-allowed"
+                  onClick={() => navigate("/login-page")}
+                  className="w-full bg-[#3a7d44] text-white font-bold py-3 rounded-xl hover:bg-[#5a9e66] transition-colors text-sm"
                 >
-                  Задача в работе
+                  Войти чтобы взять задачу
+                </button>
+              )}
+
+              {isActive && (
+                <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-xl text-sm cursor-not-allowed">
+                  {alreadyTaken ? "Вы взяли эту задачу" : "Задача в работе"}
                 </button>
               )}
 
               {isCompleted && (
-                <button
-                  disabled
-                  className="w-full bg-gray-400 text-white font-bold py-3 rounded-xl text-sm cursor-not-allowed"
-                >
+                <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-xl text-sm cursor-not-allowed">
                   Задача выполнена
                 </button>
               )}
@@ -237,9 +267,9 @@ export default function TaskCard() {
                       console.error("Ошибка:", error);
                     }
                   }}
-                  className="text-xs text-gray-500 hover:text-green-600 transition whitespace-nowrap"
+                  className="w-full flex items-center justify-center gap-2 border border-gray-200 text-[#616161] text-sm py-2 rounded-xl hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
                 >
-                  ✉️ Написать куратору
+                  💬 Написать
                 </button>
               </div>
             )}

@@ -89,21 +89,18 @@ export default function OwnerRegister() {
           Создайте аккаунт. После регистрации вы сможете добавить питомцев в личном кабинете.
         </p>
 
-        {/* Ошибка */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Успех */}
         {success && (
           <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
             {success}
           </div>
         )}
 
-        {/* Email или телефон */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email или телефон <span className="text-red-500">*</span>
@@ -117,7 +114,6 @@ export default function OwnerRegister() {
           />
         </div>
 
-        {/* Пароль */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Пароль <span className="text-red-500">*</span>
@@ -131,7 +127,6 @@ export default function OwnerRegister() {
           />
         </div>
 
-        {/* Подтверждение пароля */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Подтверждение пароля <span className="text-red-500">*</span>
@@ -152,7 +147,6 @@ export default function OwnerRegister() {
           )}
         </div>
 
-        {/* Ваше имя */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Ваше имя
@@ -166,7 +160,6 @@ export default function OwnerRegister() {
           />
         </div>
 
-        {/* Контактный телефон */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Контактный телефон (для связи)
@@ -180,7 +173,6 @@ export default function OwnerRegister() {
           />
         </div>
 
-        {/* Кнопка */}
         <div className="flex justify-end">
           <button
             onClick={handleSubmit}

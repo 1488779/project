@@ -1,44 +1,27 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const SKILLS = ["Транспорт", "Выгул", "Уборка", "Стройка", "Фото", "SMM", "Ветеринария", "Сбор средств", "Юридическая помощь", "🐾 Передержка"];
-const ANIMALS = ["Собаки", "Кошки", "Грызуны", "Любые"];
-
 export default function VolunteerRegister2() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    skills: [],
-    hasExperience: false,
-    preferredAnimals: [],
     availableTime: "",
+    about: "",
   });
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArray = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((v) => v !== value)
-        : [...prev[field], value],
-    }));
-  };
-
   const handleNext = () => {
-    localStorage.setItem('volunteerStep2', JSON.stringify({
-      skills: form.skills,
-      hasExperience: form.hasExperience,
-      preferredAnimals: form.preferredAnimals,
+    localStorage.setItem("volunteerStep2", JSON.stringify({
       availableTime: form.availableTime,
+      about: form.about,
     }));
-    
-    navigate('/volunteer-register-3');
+    navigate("/volunteer-register-3");
   };
 
   const handleBack = () => {
-    navigate('/register/volunteer');
+    navigate("/register/volunteer");
   };
 
   return (
@@ -52,68 +35,12 @@ export default function VolunteerRegister2() {
         </div>
 
         <h1 className="text-xl font-bold text-gray-900 mb-6">
-          Мои компетенции и опыт
+          Доступность и о себе
         </h1>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Навыки (выберите подходящие)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {SKILLS.map((skill) => (
-              <button
-                key={skill}
-                type="button"
-                onClick={() => toggleArray("skills", skill)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition
-                  ${form.skills.includes(skill)
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
-                  }`}
-              >
-                {skill}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Опыт</label>
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.hasExperience}
-              onChange={(e) => handleChange("hasExperience", e.target.checked)}
-            />
-            Есть опыт волонтёрства
-          </label>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Предпочитаемые животные
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {ANIMALS.map((animal) => (
-              <button
-                key={animal}
-                type="button"
-                onClick={() => toggleArray("preferredAnimals", animal)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition
-                  ${form.preferredAnimals.includes(animal)
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
-                  }`}
-              >
-                {animal}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Доступное время (дни и часы)
+            Доступное время
           </label>
           <input
             type="text"
@@ -121,6 +48,19 @@ export default function VolunteerRegister2() {
             value={form.availableTime}
             onChange={(e) => handleChange("availableTime", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500"
+          />
+        </div>
+
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            О себе
+          </label>
+          <textarea
+            rows={4}
+            placeholder="Расскажите немного о себе, своей мотивации помогать животным..."
+            value={form.about}
+            onChange={(e) => handleChange("about", e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none resize-none focus:border-green-500"
           />
         </div>
 

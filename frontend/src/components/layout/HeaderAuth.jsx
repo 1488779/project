@@ -59,7 +59,6 @@ export default function HeaderAuth() {
   return (
     <header className="w-full border-b border-gray-200 bg-white">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        {/* Left: Logo + City */}
         <div className="flex items-center gap-6">
           <Link to="/dashboard">
             <Logo />
@@ -71,7 +70,6 @@ export default function HeaderAuth() {
           </button>
         </div>
 
-        {/* Center: Nav */}
         <nav className="hidden md:flex items-center gap-7">
           <Link to="/about-project" className="text-sm text-gray-700 hover:text-gray-900 transition-colors">О проекте</Link>
           <Link to="/shelters-page" className="text-sm text-gray-700 hover:text-gray-900 transition-colors">Приюты</Link>
@@ -79,7 +77,6 @@ export default function HeaderAuth() {
           <Link to="/how-to-help" className="text-sm text-gray-700 hover:text-gray-900 transition-colors">Как помочь</Link>
         </nav>
 
-        {/* Right: Profile + Bell */}
         <div className="flex items-center gap-3">
           <div className="relative">
             <button
