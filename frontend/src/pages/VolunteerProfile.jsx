@@ -30,9 +30,9 @@ export default function VolunteerProfile() {
         const profileData = await api.getMyProfile();
         setVolunteer(profileData.data);
         const activeData = await api.getMyActiveTasks();
-        setActiveTasks(activeData.data);
+        setActiveTasks(activeData.data || []);
         const historyData = await api.getMyHistory();
-        setDoneTasks(historyData.data);
+        setDoneTasks(historyData.data || []);
       } catch (e) {
         setError(e.message);
       } finally {
@@ -46,9 +46,9 @@ export default function VolunteerProfile() {
     try {
       await api.completeTask(id);
       const activeData = await api.getMyActiveTasks();
-      setActiveTasks(activeData.data);
+      setActiveTasks(activeData.data || []);
       const historyData = await api.getMyHistory();
-      setDoneTasks(historyData.data);
+      setDoneTasks(historyData.data || []);
     } catch (e) {
       alert("Ошибка: " + e.message);
     }
@@ -71,11 +71,11 @@ export default function VolunteerProfile() {
     );
   }
 
-  const name = volunteer.name ?? "Волонтёр";
-  const city = volunteer.city ?? "—";
-  const avatar = volunteer.avatar ?? null;
-  const skills = volunteer.skills ?? [];
-  const stats = volunteer.stats ?? { tasks: 0, hours: 0, saved: 0 };
+  const name = volunteer?.name ?? "Волонтёр";
+  const city = volunteer?.city ?? "—";
+  const avatar = volunteer?.avatar ?? null;
+  const skills = volunteer?.skills ?? [];
+  const stats = volunteer?.stats ?? { tasks: 0, hours: 0, saved: 0 };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,9 +101,9 @@ export default function VolunteerProfile() {
 
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
-            { value: stats.tasks, label: "Выполнено задач" },
-            { value: stats.hours, label: "Часов помощи" },
-            { value: stats.saved, label: "Спасено животных" },
+            { value: stats?.tasks ?? 0, label: "Выполнено задач" },
+            { value: stats?.hours ?? 0, label: "Часов помощи" },
+            { value: stats?.saved ?? 0, label: "Спасено животных" },
           ].map(({ value, label }) => (
             <div key={label} className="bg-white rounded-xl shadow-sm p-4 text-center">
               <p className="text-2xl font-bold text-green-600">{value}</p>
@@ -112,7 +112,7 @@ export default function VolunteerProfile() {
           ))}
         </div>
 
-        {skills.length > 0 && (
+        {skills && skills.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-3">Мои навыки</h2>
             <div className="flex flex-wrap gap-2">
@@ -130,7 +130,7 @@ export default function VolunteerProfile() {
 
         <div className="mb-8">
           <h2 className="text-lg font-bold text-gray-900 mb-3">Мои задачи</h2>
-          {activeTasks.length === 0 ? (
+          {!activeTasks || activeTasks.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-400 text-sm">
               Нет активных задач
             </div>
@@ -174,7 +174,7 @@ export default function VolunteerProfile() {
 
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-3">История</h2>
-          {doneTasks.length === 0 ? (
+          {!doneTasks || doneTasks.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-400 text-sm">
               История пуста
             </div>
