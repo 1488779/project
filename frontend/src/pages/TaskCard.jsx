@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import MapComponent from "../components/map/MapComponent";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -190,8 +191,14 @@ export default function TaskCard() {
                 <p className="text-sm text-[#212121]">{address}</p>
               </div>
 
-              <div className="bg-[#f5f5f5] rounded-xl h-24 flex items-center justify-center text-[#9e9e9e] text-sm mb-4">
-                🗺️ Мини-карта
+              <div className="rounded-xl overflow-hidden h-32 mb-4">
+                <MapComponent 
+                  lat={task.lat || extra.lat}
+                  lng={task.lng || extra.lng}
+                  address={address}
+                  height="128"
+                  interactive={true}
+                />
               </div>
 
               {!isActive && !isCompleted && isVolunteer && (
@@ -237,10 +244,21 @@ export default function TaskCard() {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate("/chat")}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-200 text-[#616161] text-sm py-2 rounded-xl hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
+                  onClick={async () => {
+                    if (!task.createdById) {
+                      console.error("Нет createdById у задачи");
+                      return;
+                    }
+                    try {
+                      const response = await api.createChat(task.createdById);
+                      navigate(`/chat/${response.data.id}`);
+                    } catch (error) {
+                      console.error("Ошибка:", error);
+                    }
+                  }}
+                  className="text-xs text-gray-500 hover:text-green-600 transition whitespace-nowrap"
                 >
-                  💬 Написать
+                  ✉️ Написать куратору
                 </button>
               </div>
             )}

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
+import LocationPicker from "../components/map/MapComponent";
 
 const CATEGORIES = ["Транспорт", "Выгул", "Ветеринария", "Уборка", "Ремонт", "Фото", "Сбор средств", "Другое"];
 const ALL_SKILLS  = ["Транспорт", "Выгул", "Фото", "Ветеринария", "Физическая сила", "Ремонт"];
@@ -15,13 +16,22 @@ export default function CreateTaskPage() {
     description: "",
     photo: null,
     date: "",
-    time: "",
+    timeFrom: "",
+    timeTo: "",
     address: "",
+    lat: null,
+    lng: null,
     urgent: false,
     skills: ["Транспорт"],
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5);
+    setForm(prev => ({ ...prev, timeFrom: currentTime }));
+  }, []);
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
@@ -31,6 +41,15 @@ export default function CreateTaskPage() {
       skills: prev.skills.includes(skill)
         ? prev.skills.filter((s) => s !== skill)
         : [...prev.skills, skill],
+    }));
+  };
+
+  const handleLocationSelect = (lat, lng, address) => {
+    setForm(prev => ({
+      ...prev,
+      lat: lat,
+      lng: lng,
+      address: address || prev.address
     }));
   };
 
@@ -55,12 +74,16 @@ export default function CreateTaskPage() {
         category: form.category,
         description: form.description,
         date: form.date || null,
-        timeFrom: form.time || null,
+        timeFrom: form.timeFrom || null,
+        timeTo: form.timeTo || null,
         address: form.address || null,
+        lat: form.lat || null,
+        lng: form.lng || null,
         skills: form.skills,
         isUrgent: form.urgent,
         photos: photoUrl ? [photoUrl] : [],
-        createdById: user?.id
+        createdById: user?.id,
+        shelterId: user?.shelterId || null
       };
       
       await api.createTask(taskData);
@@ -151,28 +174,24 @@ export default function CreateTaskPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#424242] mb-1.5">Время</label>
+                <label className="block text-sm font-medium text-[#424242] mb-1.5">Время окончания</label>
                 <input
                   type="time"
-                  value={form.time}
-                  onChange={(e) => set("time", e.target.value)}
+                  value={form.timeTo}
+                  onChange={(e) => set("timeTo", e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-[#616161] outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#424242] mb-1.5">Адрес</label>
-              <input
-                type="text"
-                value={form.address}
-                onChange={(e) => set("address", e.target.value)}
-                placeholder="ул. Мира, 28, Екатеринбург"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30"
+              <label className="block text-sm font-medium text-[#424242] mb-1.5">Адрес и местоположение</label>
+              <LocationPicker
+                onLocationSelect={handleLocationSelect}
+                initialAddress={form.address}
+                initialLat={form.lat}
+                initialLng={form.lng}
               />
-              <div className="mt-2 bg-[#f5f5f5] rounded-xl h-24 flex items-center justify-center text-[#9e9e9e] text-sm">
-                🗺️ Карта
-              </div>
             </div>
 
             <div className="flex items-center justify-between">

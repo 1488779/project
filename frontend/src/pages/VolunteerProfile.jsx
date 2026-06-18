@@ -153,7 +153,14 @@ export default function VolunteerProfile() {
                       Завершить
                     </button>
                     <button
-                      onClick={() => navigate("/chat")}
+                      onClick={async () => {
+                        try {
+                          const response = await api.createChat(task.createdById);
+                          navigate(`/chat/${response.data.id}`);
+                        } catch (error) {
+                          console.error("Ошибка:", error);
+                        }
+                      }}
                       className="text-xs text-gray-500 hover:text-green-600 transition whitespace-nowrap"
                     >
                       ✉️ Написать куратору

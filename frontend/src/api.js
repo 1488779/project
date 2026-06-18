@@ -65,6 +65,7 @@ export const api = {
   updateMySkills: (skills) => request("/api/volunteer/profile/skills", { method: "PUT", body: JSON.stringify({ skills }) }),
   getMyActiveTasks: () => request("/api/volunteer/tasks/active"),
   getMyHistory: () => request("/api/volunteer/history"),
+  getVolunteersCountByShelter: () => request("/api/volunteer/shelter/volunteers-count"),
 
   //CURATORS
   getCurators: () => request("/api/curator"),
@@ -94,6 +95,12 @@ export const api = {
   markNotificationAsRead: (id) => request(`/api/notifications/${id}/read`, { method: "PATCH" }),
   markAllNotificationsAsRead: () => request("/api/notifications/read-all", { method: "PATCH" }),
   deleteNotification: (id) => request(`/api/notifications/${id}`, { method: "DELETE" }),
+
+  // CHATS
+  getMyChats: () => request("/api/chats"),
+  createChat: (otherUserId) => request("/api/chats", { method: "POST", body: JSON.stringify({ otherUserId }) }),
+  getChatMessages: (chatId) => request(`/api/chats/${chatId}/messages`),
+  sendMessage: (chatId, text) => request(`/api/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ text }) }),
 
   //UPLOAD
   uploadFile: (file) => {

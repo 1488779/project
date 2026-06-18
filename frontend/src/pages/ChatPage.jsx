@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../api";
 
 const SendIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,42 +20,79 @@ const InfoIcon = () => (
 
 const QUICK_REPLIES = ["Я выезжаю", "Я на месте", "Подтвердить"];
 
-// TODO: Заменить на реальный WebSocket / polling когда бэкенд добавит чат-эндпоинты
-// Пока используем пустое начальное состояние — пользователь начинает новые диалоги
 export default function ChatPage() {
+  const { chatId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [messages, setMessages] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
 
-  // При наличии user показываем заглушку с его данными как «себе»
   useEffect(() => {
     if (user) {
-      // Инициализируем пустые чаты — в будущем GET /api/chats
-      setChats([]);
+      loadChats();
     }
   }, [user]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, selectedChat]);
+    if (chatId && chats.length > 0) {
+      const chat = chats.find(c => c.id === parseInt(chatId));
+      if (chat) {
+        setSelectedChat(chat);
+      }
+    }
+  }, [chatId, chats]);
 
-  const sendMessage = (text) => {
-    if (!text.trim() || !selectedChat) return;
-    const newMsg = {
-      id: Date.now(),
-      from: "me",
-      text: text.trim(),
-      time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
-    };
-    setMessages((prev) => ({
-      ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMsg],
-    }));
-    setInputValue("");
-    // TODO: POST /api/messages когда бэкенд добавит эндпоинт
+  useEffect(() => {
+    if (selectedChat) {
+      loadMessages(selectedChat.id);
+    }
+  }, [selectedChat]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const loadChats = async () => {
+    try {
+      const response = await api.getMyChats();
+      setChats(response.data || []);
+    } catch (error) {
+      console.error("Ошибка загрузки чатов:", error);
+    }
+  };
+
+  const loadMessages = async (chatId) => {
+    setLoading(true);
+    try {
+      const response = await api.getChatMessages(chatId);
+      setMessages(response.data || []);
+    } catch (error) {
+      console.error("Ошибка загрузки сообщений:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async (text) => {
+    if (!text.trim() || !selectedChat || sending) return;
+    
+    setSending(true);
+    try {
+      await api.sendMessage(selectedChat.id, text);
+      await loadMessages(selectedChat.id);
+      await loadChats();
+      setInputValue("");
+    } catch (error) {
+      console.error("Ошибка отправки сообщения:", error);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -61,6 +100,11 @@ export default function ChatPage() {
       e.preventDefault();
       sendMessage(inputValue);
     }
+  };
+
+  const selectChat = (chat) => {
+    setSelectedChat(chat);
+    navigate(`/chat/${chat.id}`);
   };
 
   return (
@@ -83,7 +127,7 @@ export default function ChatPage() {
                 chats.map((chat) => (
                   <button
                     key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
+                    onClick={() => selectChat(chat)}
                     className={`w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#f5f5f5] transition-colors border-l-2 ${
                       selectedChat?.id === chat.id
                         ? "bg-[#f0f7f1] border-[#3a7d44]"
@@ -91,7 +135,7 @@ export default function ChatPage() {
                     }`}
                   >
                     <div className="w-10 h-10 rounded-full bg-[#e8f5e9] flex items-center justify-center text-lg shrink-0">
-                      {chat.name?.startsWith("Приют") ? "🏠" : "👤"}
+                      {chat.role === "curator" ? "🏠" : "👤"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
@@ -119,7 +163,7 @@ export default function ChatPage() {
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-[#e8f5e9] flex items-center justify-center text-base">
-                      {selectedChat.name?.startsWith("Приют") ? "🏠" : "👤"}
+                      {selectedChat.role === "curator" ? "🏠" : "👤"}
                     </div>
                     <span className="font-bold text-[#212121]">{selectedChat.name}</span>
                   </div>
@@ -129,22 +173,28 @@ export default function ChatPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
-                  {(messages[selectedChat.id] || []).map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.from === "me" ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                          msg.from === "me"
-                            ? "bg-[#3a7d44] text-white rounded-br-md"
-                            : "bg-[#f5f5f5] text-[#212121] rounded-bl-md"
-                        }`}
-                      >
-                        <p>{msg.text}</p>
-                        <p className={`text-xs mt-1 ${msg.from === "me" ? "text-green-200 text-right" : "text-[#9e9e9e]"}`}>
-                          {msg.time}
-                        </p>
+                  {loading ? (
+                    <div className="text-center text-gray-400">Загрузка...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center text-gray-400">Нет сообщений</div>
+                  ) : (
+                    messages.map((msg) => (
+                      <div key={msg.id} className={`flex ${msg.from === "me" ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                            msg.from === "me"
+                              ? "bg-[#3a7d44] text-white rounded-br-md"
+                              : "bg-[#f5f5f5] text-[#212121] rounded-bl-md"
+                          }`}
+                        >
+                          <p>{msg.text}</p>
+                          <p className={`text-xs mt-1 ${msg.from === "me" ? "text-green-200 text-right" : "text-[#9e9e9e]"}`}>
+                            {msg.time}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -153,7 +203,8 @@ export default function ChatPage() {
                     <button
                       key={qr}
                       onClick={() => sendMessage(qr)}
-                      className="px-4 py-1.5 rounded-full border border-gray-300 text-sm text-[#616161] hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors"
+                      disabled={sending}
+                      className="px-4 py-1.5 rounded-full border border-gray-300 text-sm text-[#616161] hover:border-[#3a7d44] hover:text-[#3a7d44] transition-colors disabled:opacity-50"
                     >
                       {qr}
                     </button>
@@ -168,11 +219,13 @@ export default function ChatPage() {
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Введите сообщение..."
-                      className="flex-1 bg-[#f5f5f5] rounded-xl px-4 py-2.5 text-sm text-[#212121] placeholder-[#9e9e9e] outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30 transition-all"
+                      disabled={sending}
+                      className="flex-1 bg-[#f5f5f5] rounded-xl px-4 py-2.5 text-sm text-[#212121] placeholder-[#9e9e9e] outline-none focus:ring-2 focus:ring-[#3a7d44] focus:ring-opacity-30 transition-all disabled:opacity-50"
                     />
                     <button
                       onClick={() => sendMessage(inputValue)}
-                      className="w-10 h-10 rounded-xl bg-[#3a7d44] flex items-center justify-center text-white hover:bg-[#5a9e66] transition-colors shrink-0"
+                      disabled={sending || !inputValue.trim()}
+                      className="w-10 h-10 rounded-xl bg-[#3a7d44] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white hover:bg-[#5a9e66] transition-colors shrink-0"
                     >
                       <SendIcon />
                     </button>

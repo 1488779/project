@@ -49,6 +49,14 @@ function categoryMatches(task, filter) {
   return cat.includes(f);
 }
 
+const formatDistance = (distance) => {
+  if (distance === null || distance === undefined) return null;
+  if (distance < 1) {
+    return `${Math.round(distance * 1000)} м`;
+  }
+  return `${distance} км`;
+};
+
 export default function TasksPage() {
   const navigate = useNavigate();
   const [tasks, setTasks]       = useState([]);
@@ -121,8 +129,8 @@ export default function TasksPage() {
                   <p className="text-xs text-gray-400">{task.shelter}</p>
                 </div>
               </div>
-              {task.distance != null && (
-                <p className="text-xs text-green-700">📍 {task.distance} км от вас</p>
+              {task.distance !== null && task.distance !== undefined && (
+                <p className="text-xs text-green-700">📍 {formatDistance(task.distance)} от вас</p>
               )}
               <button
                 onClick={() => navigate(`/tasks/${task.id}`)}

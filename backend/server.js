@@ -17,6 +17,7 @@ const tasksRoutes = require('./routes/tasksRoutes');
 const authRoutes = require('./routes/authRoutes');
 const fosterRoutes = require('./routes/fosterRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -49,6 +50,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/foster-requests', fosterRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chats', chatRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Маршрут не найден' });

@@ -28,6 +28,8 @@ model User {
   createdTasks   Task[]   @relation("TaskCreator")
   notifications  Notification[]
   adoptedAnimals Animal[] @relation("AnimalAdopter")
+  chatParticipants ChatParticipant[]
+  sentMessages     Message[]
 }
 
 
@@ -49,6 +51,8 @@ model Volunteer {
   notifyEmail      Boolean  @default(false)
   notifyPush       Boolean  @default(false)
   notifyDigest     Boolean  @default(false)
+  lat  Float?
+  lng  Float?
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -92,6 +96,9 @@ model Shelter {
   email       String
   address     String
   logo        String?
+  lat       Float?
+  lng       Float?
+  district  String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -142,55 +149,43 @@ model Animal {
 
 model Task {
   id          Int      @id @default(autoincrement())
-
   title       String
   description String?  
   category    String? 
-
   shelterId   Int?
-  shelter     Shelter? @relation(fields: [shelterId], references: [id])
-  
+  shelter     Shelter? @relation(fields: [shelterId], references: [id]) 
   address     String?  
-  
   date        String?
   timeFrom    String?
-  timeTo      String?
-  
-  skills      String[]
-  
-  isUrgent    Boolean   @default(false)
-  
+  timeTo      String? 
+  skills      String[]  
+  isUrgent    Boolean   @default(false) 
   contactName String?
   contactRole String?
   contactPhone String?
-  
+  lat  Float?
+  lng  Float? 
   status           String   @default("open")        
-  moderationStatus String   @default("pending")     
-  
+  moderationStatus String   @default("pending")      
   photos      String[]
   
   createdById Int?
   createdBy   User?    @relation("TaskCreator", fields: [createdById], references: [id])
   volunteerId Int?
   volunteer   Volunteer? @relation(fields: [volunteerId], references: [id])
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 
 model FosterRequest {
-  id          Int      @id @default(autoincrement())
-  
+  id          Int      @id @default(autoincrement())  
   animalId    Int?
-  animal      Animal?  @relation(fields: [animalId], references: [id])
-  
+  animal      Animal?  @relation(fields: [animalId], references: [id])  
   ownerId     Int
-  owner       Owner    @relation(fields: [ownerId], references: [id])
-  
+  owner       Owner    @relation(fields: [ownerId], references: [id]) 
   volunteerId Int
-  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
-  
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id]) 
   animalType  String
   days        Int
   needsMeds   Boolean  @default(false)
@@ -226,4 +221,35 @@ model TaskProposal {
   rejectionReason String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ChatParticipant[]
+  messages     Message[]
+}
+
+model ChatParticipant {
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  Int
+  sender    User     @relation(fields: [senderId], references: [id])
+  text      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

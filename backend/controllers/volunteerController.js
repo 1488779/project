@@ -219,11 +219,57 @@ async function updateMySkills(req, res) {
   }
 }
 
+const getVolunteersCountByShelter = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const curator = await prisma.curator.findUnique({
+      where: { userId: userId },
+      include: { shelter: true }
+    });
+    
+    if (!curator) {
+      return res.status(403).json({ success: false, error: 'Вы не куратор' });
+    }
+    
+    if (!curator.shelter.lat || !curator.shelter.lng) {
+      return res.json({ success: true, count: 0 });
+    }
+    
+    const allVolunteers = await prisma.volunteer.findMany({
+      where: {
+        lat: { not: null },
+        lng: { not: null }
+      },
+      include: { user: true }
+    });
+    
+    const { calculateDistance } = require('../utils/distance');
+    const RADIUS = 5; // 5 км — средний радиус района в Екатеринбурге
+    
+    const nearbyVolunteers = allVolunteers.filter(v => {
+      const distance = calculateDistance(
+        curator.shelter.lat,
+        curator.shelter.lng,
+        v.lat,
+        v.lng
+      );
+      return distance !== null && distance <= RADIUS;
+    });
+    
+    res.json({ success: true, count: nearbyVolunteers.length });
+  } catch (error) {
+    console.error('Ошибка подсчёта волонтёров:', error);
+    res.status(500).json({ success: false, error: 'Ошибка подсчёта волонтёров' });
+  }
+};
+
 module.exports = {
   registerVolunteer,
   getVolunteers,
   getVolunteerById,
   getMyProfile,
   updateMyProfile,
-  updateMySkills
+  updateMySkills,
+  getVolunteersCountByShelter
 };
