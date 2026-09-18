@@ -1,18 +1,196 @@
-# React + Vite
+Лапа Помощи
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Платформа для связи приютов для животных, волонтёров и временных хозяев. Позволяет публиковать задачи помощи приютам, находить питомцев для передержки и управлять анкетами животных.
 
-Currently, two official plugins are available:
+  Содержание
+Возможности
+Стек технологий
+Структура проекта
+Быстрый старт
+Переменные окружения
+API
+Роли пользователей
+База данных
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+  Возможности
+Волонтёры — просматривают задачи приютов, откликаются на них, предлагают передержку
+Кураторы — добавляют животных и задачи, управляют ими через дашборд
+Владельцы — ищут волонтёров для временного содержания питомца
+Регистрация с разными ролями и многоэтапными анкетами
+Каталог животных с фильтрацией по виду, возрасту и размеру
+Загрузка фотографий для животных и задач
+Модерация анкет перед публикацией
+Уведомления для пользователей
+JWT-аутентификация
+🛠 Стек технологий
+Frontend
+Технология	Версия
+React	19
+React Router	7
+Tailwind CSS	4
+Vite	8
+Backend
+Технология	Версия
+Node.js + Express	4.18
+Prisma ORM	5
+PostgreSQL	—
+JWT (jsonwebtoken)	9
+bcrypt	6
+Multer	2
+  
+  Структура проекта
+my-project/
+├── backend/
+│   ├── controllers/        # Логика обработки запросов
+│   │   ├── authController.js
+│   │   ├── animalController.js
+│   │   ├── taskController.js
+│   │   ├── volunteerController.js
+│   │   ├── curatorController.js
+│   │   ├── ownerController.js
+│   │   └── shelterController.js
+│   ├── routes/             # Маршруты API
+│   ├── middleware/         # Загрузка файлов, валидация
+│   ├── prisma/
+│   │   ├── schema.prisma   # Схема базы данных
+│   │   ├── seed.js         # Начальные данные
+│   │   └── migrations/
+│   ├── uploads/            # Загруженные файлы
+│   ├── server.js
+│   └── .env
+└── frontend/
+    ├── src/
+    │   ├── api.js          # Централизованный API-клиент
+    │   ├── context/
+    │   │   └── AuthContext.jsx
+    │   ├── components/
+    │   │   ├── layout/     # Header, Footer
+    │   │   ├── CuratorRegister/
+    │   │   └── VolunteerRegister/
+    │   └── pages/
+    │       ├── Home.jsx
+    │       ├── AnimalsPage.jsx
+    │       ├── Tasks.jsx
+    │       ├── LoginPage.jsx
+    │       ├── VolunteerDashboard.jsx
+    │       ├── CuratorDashboard.jsx
+    │       ├── OwnerDashboard.jsx
+    │       └── ...
+    ├── index.html
+    └── .env
+  
+  Быстрый старт
+Требования
+Node.js 18+
+PostgreSQL 14+
+1. Клонировать репозиторий
+bash
+git clone https://github.com/your-username/lapa-pomoshi.git
+cd lapa-pomoshi
+2. Настроить и запустить бэкенд
+bash
+cd backend
+npm install
 
-## React Compiler
+Создать файл .env (см. Переменные окружения), затем:
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+bash
+# Применить миграции и создать таблицы
+npx prisma migrate deploy
 
-Note: This will impact Vite dev & build performances.
+# (Опционально) Заполнить тестовыми данными
+npx prisma db seed
 
-## Expanding the ESLint configuration
+# Запустить в режиме разработки
+npm run dev
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Бэкенд запустится на http://localhost:5000.
+
+3. Настроить и запустить фронтенд
+bash
+cd ../frontend
+npm install
+
+Создать файл .env:
+
+env
+VITE_API_URL=http://localhost:5000
+bash
+npm run dev
+
+Фронтенд запустится на http://localhost:5173.
+
+⚙️ Переменные окружения
+backend/.env
+env
+# Строка подключения к PostgreSQL
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/animal_shelter?schema=public"
+
+# Секрет для подписи JWT-токенов (придумайте надёжный)
+JWT_SECRET="your_secret_key"
+
+# Порт сервера (по умолчанию 5000)
+PORT=5000
+frontend/.env
+env
+# Базовый URL бэкенда
+VITE_API_URL=http://localhost:5000
+🔌 API
+
+Все эндпоинты имеют префикс /api.
+
+Аутентификация
+Метод	Путь	Описание
+POST	/api/auth/login	Вход (email или телефон + пароль)
+Животные
+Метод	Путь	Описание
+GET	/api/animals	Список всех животных
+GET	/api/animals/:id	Карточка животного
+POST	/api/animals	Добавить животное (требует авторизации)
+Задачи
+Метод	Путь	Описание
+GET	/api/tasks	Список всех задач
+GET	/api/tasks/:id	Карточка задачи
+POST	/api/tasks	Создать задачу (требует авторизации)
+Регистрация
+Метод	Путь	Описание
+POST	/api/volunteer/register	Регистрация волонтёра
+POST	/api/curator/create-account	Шаг 1 регистрации куратора
+POST	/api/curator/complete-with-new-shelter	Шаг 2 — с новым приютом
+POST	/api/curator/complete-with-existing-shelter	Шаг 2 — с существующим приютом
+POST	/api/owner/register	Регистрация владельца
+Прочее
+Метод	Путь	Описание
+GET	/api/volunteer	Список волонтёров
+GET	/api/curator	Список кураторов
+GET	/api/shelters	Список приютов
+POST	/api/upload	Загрузка файла (multipart/form-data, поле file)
+GET	/uploads/:filename	Доступ к загруженным файлам
+👥 Роли пользователей
+Роль	Возможности
+volunteer	Просмотр задач и животных, отклик на задачи, предложение передержки
+curator	Добавление животных и задач, управление ими через дашборд
+owner	Поиск волонтёров для передержки питомца, отправка заявок
+
+После входа пользователь автоматически перенаправляется на дашборд своей роли (/dashboard/volunteer, /dashboard/curator, /dashboard/owner).
+
+  База данных
+
+Схема включает следующие модели:
+
+User — базовый аккаунт, к которому привязывается роль
+Volunteer — профиль волонтёра (навыки, районы, готовность к передержке)
+Curator — куратор, привязанный к приюту
+Owner — владелец, ищущий передержку
+Shelter — организация-приют
+Animal — анкета животного с модерацией
+Task — задача для волонтёров с модерацией
+FosterRequest — заявка на передержку
+TaskProposal — предложение задачи от волонтёра
+Notification — уведомления пользователей
+
+Для визуализации схемы:
+
+bash
+cd backend
+npx prisma studio
